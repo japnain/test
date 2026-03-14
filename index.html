@@ -2288,37 +2288,154 @@ class VoiceGuide {
   constructor() {
     this.enabled = false;
     this.synth = window.speechSynthesis || null;
-    this.rate = 0.9;
-    this.pitch = 1.0;
-    this.volume = 0.8;
+    this.voice = null;
+    this.voiceReady = false;
+    this.rate = 0.82;
+    this.pitch = 1.05;
+    this.volume = 0.7;
     this.lastSpoken = '';
     this.lastSpokenTime = 0;
+    this.speakTimeout = null;
+    this.audioCtx = null;
+    // Listen for voices to load (Chrome loads async)
+    if (this.synth) {
+      this.synth.addEventListener('voiceschanged', () => this.initVoice());
+      this.initVoice();
+    }
+  }
+
+  initVoice() {
+    if (!this.synth) return;
+    const voices = this.synth.getVoices();
+    if (voices.length === 0) return;
+    // Prefer known high-quality female voices
+    const preferred = [
+      'Google UK English Female', 'Samantha', 'Karen',
+      'Moira', 'Fiona', 'Victoria', 'Zira', 'Google US English'
+    ];
+    for (const name of preferred) {
+      const v = voices.find(v => v.name.includes(name));
+      if (v) { this.voice = v; this.voiceReady = true; return; }
+    }
+    // Any English voice that isn't obviously male
+    const female = voices.find(v =>
+      v.lang.startsWith('en') &&
+      !/(Male|David|Daniel|James|George|Fred|Tom|Alex$)/i.test(v.name)
+    );
+    if (female) { this.voice = female; this.voiceReady = true; return; }
+    // Any English voice
+    const english = voices.find(v => v.lang.startsWith('en'));
+    if (english) { this.voice = english; }
+    this.voiceReady = true;
   }
 
   setEnabled(on) { this.enabled = on; }
+
+  setAudioContext(ctx) { this.audioCtx = ctx; }
 
   speak(text, priority = 'high') {
     if (!this.enabled || !this.synth) return;
     if (priority === 'low' && this.synth.speaking) return;
     const now = Date.now();
     if (text === this.lastSpoken && now - this.lastSpokenTime < 1200) return;
+    if (!this.voiceReady) this.initVoice();
     this.synth.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate = this.rate;
-    utt.pitch = this.pitch;
-    utt.volume = this.volume;
-    this.lastSpoken = text;
-    this.lastSpokenTime = now;
-    this.synth.speak(utt);
+    if (this.speakTimeout) clearTimeout(this.speakTimeout);
+
+    // Play ambient overlay tone, then speak with slight delay
+    const overlayType = this.getOverlayType(text);
+    this.playOverlay(overlayType);
+
+    this.speakTimeout = setTimeout(() => {
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = this.rate;
+      utt.pitch = this.pitch;
+      utt.volume = this.volume;
+      if (this.voice) utt.voice = this.voice;
+      this.lastSpoken = text;
+      this.lastSpokenTime = now;
+      this.synth.speak(utt);
+    }, 50);
   }
 
   stop() {
+    if (this.speakTimeout) clearTimeout(this.speakTimeout);
     if (this.synth) this.synth.cancel();
     this.lastSpoken = '';
   }
 
   isSupported() {
     return 'speechSynthesis' in window;
+  }
+
+  getOverlayType(text) {
+    if (/breathe in|left nostril.*in|right nostril.*in/i.test(text)) return 'inhale';
+    if (/breathe out|left nostril.*out|right nostril.*out/i.test(text)) return 'exhale';
+    if (/^hold/i.test(text)) return 'hold';
+    if (/^[1-3]$/.test(text)) return 'tick';
+    if (/begin|session complete/i.test(text)) return 'bowl';
+    return 'inhale';
+  }
+
+  playOverlay(type) {
+    if (!this.audioCtx) return;
+    const ctx = this.audioCtx;
+    const t = ctx.currentTime;
+
+    if (type === 'inhale' || type === 'exhale') {
+      // Gentle sine sweep — rising for inhale, falling for exhale
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      const startF = type === 'inhale' ? 396 : 528;
+      const endF = type === 'inhale' ? 528 : 396;
+      o.frequency.setValueAtTime(startF, t);
+      o.frequency.linearRampToValueAtTime(endF, t + 0.8);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.1);
+      g.gain.setValueAtTime(0.06, t + 0.5);
+      g.gain.linearRampToValueAtTime(0, t + 0.8);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 0.85);
+    } else if (type === 'hold') {
+      // Sustained tone at 432 Hz with gentle vibrato
+      const o = ctx.createOscillator();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      const g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(432, t);
+      lfo.type = 'sine'; lfo.frequency.setValueAtTime(4, t);
+      lfoGain.gain.setValueAtTime(3, t);
+      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.15);
+      g.gain.setValueAtTime(0.05, t + 0.7);
+      g.gain.linearRampToValueAtTime(0, t + 1.0);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); lfo.start(t);
+      o.stop(t + 1.05); lfo.stop(t + 1.05);
+    } else if (type === 'tick') {
+      // Soft crystalline ping
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(880, t);
+      g.gain.setValueAtTime(0.03, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 0.2);
+    } else if (type === 'bowl') {
+      // Singing bowl — layered harmonics with slow decay
+      [256, 512, 768].forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+        const peak = 0.08 / (i + 1);
+        g.gain.setValueAtTime(peak, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t + 2.1);
+      });
+    }
   }
 }
 
@@ -2541,7 +2658,9 @@ class App {
     );
     this.engine.start(this.selectedTechnique, this.selectedDuration);
 
-    // Voice guide: announce session start
+    // Voice guide: pass audio context and announce session start
+    this.soundscape.init();
+    this.voiceGuide.setAudioContext(this.soundscape.ctx);
     this.voiceGuide.speak('Begin. ' + this.selectedTechnique.name);
   }
 
