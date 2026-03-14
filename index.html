@@ -426,6 +426,10 @@ body::before {
           <div><div class="setting-label">Screen Awake</div><div class="setting-desc">Prevent screen sleep during sessions</div></div>
           <button class="toggle on" id="toggle-wake-lock"></button>
         </div>
+        <div class="setting-row" id="voice-guide-row">
+          <div><div class="setting-label">Voice Guide</div><div class="setting-desc">Spoken cues for eyes-closed sessions</div></div>
+          <button class="toggle" id="toggle-voice-guide"></button>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">Data</div>
@@ -565,7 +569,7 @@ class StorageManager {
       settings: {
         selectedTreeType: 'oak', selectedSoundscape: 'none', soundscapeVolume: 0.6,
         musicVolume: 0.7, breathingPattern: 'box', sessionDuration: 5,
-        hapticFeedback: true, soundCues: true, wakeLock: true,
+        hapticFeedback: true, soundCues: true, wakeLock: true, voiceGuide: false,
         selectedScenery: 'meadow'
       },
       sceneryUnlocks: {}
@@ -2279,12 +2283,53 @@ class MusicPlayer {
 }
 
 
+// ===== VOICE GUIDE =====
+class VoiceGuide {
+  constructor() {
+    this.enabled = false;
+    this.synth = window.speechSynthesis || null;
+    this.rate = 0.9;
+    this.pitch = 1.0;
+    this.volume = 0.8;
+    this.lastSpoken = '';
+    this.lastSpokenTime = 0;
+  }
+
+  setEnabled(on) { this.enabled = on; }
+
+  speak(text, priority = 'high') {
+    if (!this.enabled || !this.synth) return;
+    if (priority === 'low' && this.synth.speaking) return;
+    const now = Date.now();
+    if (text === this.lastSpoken && now - this.lastSpokenTime < 1200) return;
+    this.synth.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = this.rate;
+    utt.pitch = this.pitch;
+    utt.volume = this.volume;
+    this.lastSpoken = text;
+    this.lastSpokenTime = now;
+    this.synth.speak(utt);
+  }
+
+  stop() {
+    if (this.synth) this.synth.cancel();
+    this.lastSpoken = '';
+  }
+
+  isSupported() {
+    return 'speechSynthesis' in window;
+  }
+}
+
+
 // ===== APP CONTROLLER =====
 class App {
   constructor() {
     this.storage = new StorageManager();
     this.soundscape = new SoundscapeEngine();
     this.music = new MusicPlayer();
+    this.voiceGuide = new VoiceGuide();
     this.engine = null;
     this.sessionActive = false;
     this.selectedTechnique = TECHNIQUES[0];
@@ -2326,6 +2371,13 @@ class App {
     document.getElementById('toggle-haptic').classList.toggle('on', settings.hapticFeedback);
     document.getElementById('toggle-sound-cues').classList.toggle('on', settings.soundCues);
     document.getElementById('toggle-wake-lock').classList.toggle('on', settings.wakeLock);
+    if (this.voiceGuide.isSupported()) {
+      const vgOn = settings.voiceGuide || false;
+      document.getElementById('toggle-voice-guide').classList.toggle('on', vgOn);
+      this.voiceGuide.setEnabled(vgOn);
+    } else {
+      document.getElementById('voice-guide-row').style.display = 'none';
+    }
   }
 
   // Tab Navigation
@@ -2488,6 +2540,9 @@ class App {
       (elapsed, cycles) => this.onSessionEnd(elapsed, cycles)
     );
     this.engine.start(this.selectedTechnique, this.selectedDuration);
+
+    // Voice guide: announce session start
+    this.voiceGuide.speak('Begin. ' + this.selectedTechnique.name);
   }
 
   endSession(completed = false) {
@@ -2508,6 +2563,7 @@ class App {
     document.getElementById('retention-tap').classList.add('hidden');
 
     if (this.wakeLock) { this.wakeLock.release(); this.wakeLock = null; }
+    if (!completed) this.voiceGuide.stop();
   }
 
   onBreathingTick(state) {
@@ -2525,6 +2581,11 @@ class App {
         void timerEl.offsetWidth;
         timerEl.classList.add('pulse');
       }
+    }
+
+    // Voice countdown (last 3 seconds of each phase)
+    if (!state.freeHold && state.remaining <= 3 && state.remaining > 0) {
+      this.voiceGuide.speak(String(Math.ceil(state.remaining)), 'low');
     }
 
     // Animate circle
@@ -2576,6 +2637,17 @@ class App {
 
     // Sound cue
     if (this.storage.getSettings().soundCues) this.playChime(phase.type);
+
+    // Voice guide
+    const voiceCues = {
+      'Inhale': 'Breathe in', 'Exhale': 'Breathe out', 'Hold': 'Hold',
+      'Roar!': 'Roar', 'Breathe': 'Breathe', 'Recovery': 'Breathe in and hold',
+      'Left In': 'Left nostril, breathe in', 'Right Out': 'Right nostril, breathe out',
+      'Right In': 'Right nostril, breathe in', 'Left Out': 'Left nostril, breathe out'
+    };
+    let cue = voiceCues[phase.label] || phase.label;
+    if (phase.freeHold) cue += '. Tap when ready';
+    this.voiceGuide.speak(cue);
   }
 
   onCycleComplete(count) {
@@ -2583,6 +2655,7 @@ class App {
   }
 
   onSessionEnd(elapsed, cycles) {
+    this.voiceGuide.speak('Session complete. Well done.');
     const minutes = Math.round(elapsed / 60 * 10) / 10;
     const unlockResult = this.storage.addSession(this.selectedTree, minutes, this.selectedTechnique.id);
     this.endSession(true);
@@ -2805,6 +2878,18 @@ class App {
         this.storage.updateSettings({ [key]: el.classList.contains('on') });
       });
     });
+
+    // Voice guide toggle
+    if (this.voiceGuide.isSupported()) {
+      const vgEl = document.getElementById('toggle-voice-guide');
+      vgEl.addEventListener('click', () => {
+        vgEl.classList.toggle('on');
+        const on = vgEl.classList.contains('on');
+        this.voiceGuide.setEnabled(on);
+        this.storage.updateSettings({ voiceGuide: on });
+        if (on) this.voiceGuide.speak('Voice guide enabled');
+      });
+    }
 
     // Export
     document.getElementById('btn-export').addEventListener('click', () => {
