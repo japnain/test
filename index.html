@@ -37,6 +37,8 @@ html, body {
   color: var(--text);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 body::before {
@@ -489,27 +491,42 @@ const PLAYLISTS = ['Studio Ghibli', 'Hans Zimmer', 'Nolan Films', 'Meditation & 
 class StorageManager {
   constructor() {
     this.key = 'breathe_app';
+    this._memoryStore = null;
     this.init();
   }
+  _defaultData() {
+    const data = {
+      version: 1,
+      stats: { totalSessions: 0, totalMinutes: 0, currentStreak: 0, longestStreak: 0, lastSessionDate: null },
+      forest: [],
+      unlocks: {},
+      settings: {
+        selectedTreeType: 'oak', selectedSoundscape: 'none', soundscapeVolume: 0.6,
+        musicVolume: 0.7, breathingPattern: 'box', sessionDuration: 5,
+        hapticFeedback: true, soundCues: true, wakeLock: true
+      }
+    };
+    TREE_TYPES.forEach(t => data.unlocks[t.id] = !t.unlock);
+    return data;
+  }
   init() {
-    if (!localStorage.getItem(this.key)) {
-      const data = {
-        version: 1,
-        stats: { totalSessions: 0, totalMinutes: 0, currentStreak: 0, longestStreak: 0, lastSessionDate: null },
-        forest: [],
-        unlocks: {},
-        settings: {
-          selectedTreeType: 'oak', selectedSoundscape: 'none', soundscapeVolume: 0.6,
-          musicVolume: 0.7, breathingPattern: 'box', sessionDuration: 5,
-          hapticFeedback: true, soundCues: true, wakeLock: true
-        }
-      };
-      TREE_TYPES.forEach(t => data.unlocks[t.id] = !t.unlock);
-      localStorage.setItem(this.key, JSON.stringify(data));
+    try {
+      if (!localStorage.getItem(this.key)) {
+        localStorage.setItem(this.key, JSON.stringify(this._defaultData()));
+      }
+    } catch(e) {
+      console.warn('localStorage unavailable, using memory:', e);
+      this._memoryStore = this._defaultData();
     }
   }
-  get() { return JSON.parse(localStorage.getItem(this.key)); }
-  save(data) { localStorage.setItem(this.key, JSON.stringify(data)); }
+  get() {
+    try { return JSON.parse(localStorage.getItem(this.key)); }
+    catch(e) { return this._memoryStore || this._defaultData(); }
+  }
+  save(data) {
+    try { localStorage.setItem(this.key, JSON.stringify(data)); }
+    catch(e) { this._memoryStore = data; }
+  }
   getStats() { return this.get().stats; }
   getForest() { return this.get().forest; }
   getUnlocks() { return this.get().unlocks; }
@@ -2384,8 +2401,13 @@ class App {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  const app = new App();
-  app.init();
+  try {
+    const app = new App();
+    app.init();
+  } catch(e) {
+    console.error('App init failed:', e);
+    document.body.innerHTML = '<div style="color:white;padding:40px;text-align:center;font-family:sans-serif"><h2>Breathe</h2><p style="margin-top:20px">Error loading app. Please open this file in a browser tab (not file preview).</p><p style="margin-top:10px;color:#888;font-size:12px">' + e.message + '</p></div>';
+  }
 });
 </script>
 </body>
