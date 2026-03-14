@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breathe — Meditation & Breathing</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: rgba(255,255,255,0.04);
+  --surface-hover: rgba(255,255,255,0.07);
+  --surface-active: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.08);
+  --text: #e8e8ed;
+  --text-secondary: rgba(255,255,255,0.5);
+  --text-tertiary: rgba(255,255,255,0.3);
+  --primary: #7c9ef5;
+  --secondary: #a78bfa;
+  --success: #6ee7b7;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --blur: blur(20px);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%; width: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(124,158,245,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 100%, rgba(167,139,250,0.05) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
+
+/* Header */
+.header { padding: 12px 20px 0; text-align: center; flex-shrink: 0; }
+.header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Tab Navigation */
+.tab-nav { display: flex; position: relative; margin: 12px 20px; padding: 3px; background: var(--surface); border-radius: var(--radius-sm); border: 1px solid var(--border); flex-shrink: 0; }
+.tab-btn { flex: 1; padding: 10px 0; font-size: 13px; font-weight: 500; color: var(--text-secondary); background: none; border: none; cursor: pointer; transition: color var(--transition); position: relative; z-index: 2; font-family: var(--font); }
+.tab-btn.active { color: var(--text); }
+.tab-pill { position: absolute; height: calc(100% - 6px); top: 3px; background: var(--surface-active); border-radius: 8px; transition: left var(--transition), width var(--transition); z-index: 1; }
+
+/* Tab Panels */
+.tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 20px 20px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+.tab-content::-webkit-scrollbar { width: 4px; }
+.tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.tab-panel { display: none; animation: fadeIn 0.3s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards */
+.card { background: var(--surface); backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; transition: background var(--transition); }
+.card:hover { background: var(--surface-hover); }
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.card-subtitle { font-size: 12px; color: var(--text-secondary); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; font-family: var(--font); border: none; cursor: pointer; transition: all var(--transition); }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+.btn-secondary:hover { background: var(--surface-hover); }
+.btn-sm { padding: 8px 16px; font-size: 12px; border-radius: var(--radius-xs); }
+.btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+.btn-danger { background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+
+/* ===== BREATHE TAB ===== */
+.breathe-panel { display: flex; flex-direction: column; align-items: center; padding-top: 8px; }
+
+/* Technique Selector */
+.technique-selector { width: 100%; margin-bottom: 16px; }
+.technique-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.technique-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; cursor: pointer; transition: all var(--transition); }
+.technique-card:hover { background: var(--surface-hover); }
+.technique-card.active { border-color: var(--primary); background: rgba(124,158,245,0.1); }
+.technique-card .tech-name { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+.technique-card .tech-timing { font-size: 10px; color: var(--text-secondary); }
+
+/* Breathing Circle */
+.circle-container { position: relative; width: 220px; height: 220px; margin: 20px 0; }
+.breathing-circle {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,158,245,0.15) 0%, rgba(124,158,245,0.03) 70%);
+  border: 2px solid rgba(124,158,245,0.3);
+  transition: transform 0.1s linear;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+}
+.breathing-circle.inhale { transform: scale(1); border-color: var(--primary); background: radial-gradient(circle, rgba(124,158,245,0.2) 0%, rgba(124,158,245,0.05) 70%); }
+.breathing-circle.exhale { transform: scale(0.6); border-color: var(--secondary); background: radial-gradient(circle, rgba(167,139,250,0.15) 0%, rgba(167,139,250,0.03) 70%); }
+.breathing-circle.hold { border-color: var(--success); background: radial-gradient(circle, rgba(110,231,183,0.15) 0%, rgba(110,231,183,0.03) 70%); }
+
+.phase-label { font-size: 18px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.phase-timer { font-family: var(--mono); font-size: 42px; font-weight: 700; margin-top: 4px; }
+.phase-timer.pulse { animation: timerPulse 0.3s ease; }
+@keyframes timerPulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+/* Session Info */
+.session-info { display: flex; gap: 24px; margin: 12px 0; font-size: 12px; color: var(--text-secondary); }
+.session-info span { font-family: var(--mono); }
+
+/* Duration Selector */
+.duration-selector { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; justify-content: center; }
+.dur-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); font-family: var(--font); }
+.dur-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(124,158,245,0.1); }
+
+/* Tree Preview (during session) */
+.tree-preview { width: 120px; height: 140px; margin: 12px 0; display: flex; align-items: flex-end; justify-content: center; }
+.tree-preview svg { width: 100%; height: 100%; }
+
+/* Start/Stop Button */
+.start-btn { width: 100%; max-width: 280px; padding: 16px; font-size: 16px; margin-top: 8px; }
+
+/* Session Active State */
+.breathe-panel.active .technique-selector,
+.breathe-panel.active .duration-selector { display: none; }
+.breathe-panel .tree-preview { display: none; }
+.breathe-panel.active .tree-preview { display: flex; }
+
+/* Completion Screen */
+.completion-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10,10,15,0.95); backdrop-filter: blur(30px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.5s ease;
+}
+.completion-card { text-align: center; padding: 40px; max-width: 340px; }
+.completion-card h2 { font-size: 24px; margin-bottom: 8px; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.completion-card .tree-display { width: 160px; height: 180px; margin: 20px auto; }
+.completion-card .stats-row { display: flex; justify-content: center; gap: 24px; margin: 16px 0; }
+.completion-card .stat { text-align: center; }
+.completion-card .stat-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--primary); }
+.completion-card .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ===== FOREST TAB ===== */
+.forest-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.forest-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+.forest-stat .val { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--primary); }
+.forest-stat .lbl { font-size: 10px; color: var(--text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.forest-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.forest-tree { aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); position: relative; overflow: hidden; }
+.forest-tree:hover { background: var(--surface-hover); border-color: var(--primary); }
+.forest-tree svg { width: 80%; height: 80%; }
+.forest-tree.milestone::after { content: ''; position: absolute; inset: 0; border: 2px solid var(--warning); border-radius: var(--radius-sm); pointer-events: none; }
+.forest-empty { text-align: center; padding: 40px; color: var(--text-secondary); }
+.forest-empty p { font-size: 14px; margin-bottom: 8px; }
+
+/* Tree Detail Modal */
+.tree-modal {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10,10,15,0.9); backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+.tree-modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 30px; text-align: center; max-width: 300px; }
+.tree-modal-content svg { width: 140px; height: 160px; margin-bottom: 16px; }
+
+/* Tree Type Selector */
+.tree-selector { margin-bottom: 16px; }
+.tree-selector-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.tree-type-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.tree-type-item { aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); padding: 4px; position: relative; }
+.tree-type-item:hover { background: var(--surface-hover); }
+.tree-type-item.active { border-color: var(--primary); background: rgba(124,158,245,0.1); }
+.tree-type-item.locked { opacity: 0.4; cursor: not-allowed; }
+.tree-type-item.locked::after { content: '🔒'; position: absolute; font-size: 14px; }
+.tree-type-item svg { width: 70%; height: 60%; }
+.tree-type-item .tree-type-name { font-size: 8px; color: var(--text-secondary); margin-top: 2px; text-transform: capitalize; }
+
+/* ===== MUSIC TAB ===== */
+.sound-section { margin-bottom: 20px; }
+.sound-section-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.sound-section-title .badge { font-size: 10px; background: var(--surface-active); padding: 2px 8px; border-radius: 10px; color: var(--text-secondary); }
+
+.soundscape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.soundscape-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; cursor: pointer; transition: all var(--transition); }
+.soundscape-item:hover { background: var(--surface-hover); }
+.soundscape-item.active { border-color: var(--primary); background: rgba(124,158,245,0.1); }
+.soundscape-item .ss-name { font-size: 12px; font-weight: 600; }
+.soundscape-item .ss-desc { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+
+.volume-control { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.volume-control label { font-size: 12px; color: var(--text-secondary); min-width: 70px; }
+.volume-slider { -webkit-appearance: none; appearance: none; flex: 1; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+.volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+
+/* Music Library */
+.music-library { margin-top: 16px; }
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px;
+  text-align: center; cursor: pointer; transition: all var(--transition); margin-bottom: 12px;
+}
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--primary); background: rgba(124,158,245,0.05); }
+.drop-zone p { font-size: 13px; color: var(--text-secondary); }
+.drop-zone .drop-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+
+.playlist-tabs { display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+.playlist-tab { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); font-family: var(--font); }
+.playlist-tab.active { border-color: var(--secondary); color: var(--secondary); background: rgba(167,139,250,0.1); }
+
+.track-list { display: flex; flex-direction: column; gap: 4px; }
+.track-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xs); transition: all var(--transition); }
+.track-item:hover { background: var(--surface-hover); }
+.track-item.playing { border-color: var(--secondary); }
+.track-play-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-active); border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+.track-info { flex: 1; min-width: 0; }
+.track-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-playlist { font-size: 10px; color: var(--text-secondary); }
+.track-delete { width: 28px; height: 28px; border-radius: 50%; background: none; border: none; color: var(--text-tertiary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.track-delete:hover { color: var(--danger); background: rgba(248,113,113,0.1); }
+
+.music-controls { display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; }
+.music-controls .now-playing { flex: 1; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); }
+.music-controls .ctrl-btn { width: 36px; height: 36px; border-radius: 50%; background: none; border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all var(--transition); }
+.music-controls .ctrl-btn:hover { background: var(--surface-hover); }
+.music-controls .ctrl-btn.active { border-color: var(--secondary); color: var(--secondary); }
+
+/* ===== SETTINGS TAB ===== */
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; }
+.setting-desc { font-size: 11px; color: var(--text-secondary); }
+.toggle { width: 44px; height: 24px; border-radius: 12px; background: var(--border); border: none; cursor: pointer; position: relative; transition: background var(--transition); flex-shrink: 0; }
+.toggle.on { background: var(--primary); }
+.toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: transform var(--transition); }
+.toggle.on::after { transform: translateX(20px); }
+
+/* Toast Notification */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--surface); backdrop-filter: var(--blur); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 20px; font-size: 13px;
+  z-index: 200; opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .toast-icon { margin-right: 8px; }
+
+/* Wim Hof specific */
+.wim-hof-counter { font-family: var(--mono); font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.retention-tap { font-size: 11px; color: var(--text-secondary); margin-top: 8px; animation: blink 2s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Responsive */
+@media (max-width: 380px) {
+  .technique-grid { grid-template-columns: 1fr 1fr; }
+  .forest-grid { grid-template-columns: repeat(4, 1fr); }
+  .soundscape-grid { grid-template-columns: 1fr; }
+}
+
+/* Idle tree sway */
+@keyframes sway { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+.tree-sway { animation: sway 4s ease-in-out infinite; transform-origin: bottom center; }
+
+/* Hidden utility */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header"><h1>BREATHE</h1></header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="breathe">Breathe</button>
+    <button class="tab-btn" data-tab="forest">Forest</button>
+    <button class="tab-btn" data-tab="music">Music</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
+    <div class="tab-pill" style="left:3px;width:calc(25% - 2px)"></div>
+  </nav>
+
+  <div class="tab-content">
+    <!-- BREATHE PANEL -->
+    <div class="tab-panel active" id="panel-breathe">
+      <div class="breathe-panel" id="breathe-panel">
+        <div class="technique-selector">
+          <div class="technique-grid" id="technique-grid"></div>
+        </div>
+
+        <div class="tree-selector card" id="tree-selector-card">
+          <div class="tree-selector-label">Grow a tree</div>
+          <div class="tree-type-grid" id="tree-type-grid"></div>
+        </div>
+
+        <div class="duration-selector" id="duration-selector"></div>
+
+        <div class="circle-container">
+          <div class="breathing-circle" id="breathing-circle">
+            <div class="phase-label" id="phase-label">Ready</div>
+            <div class="phase-timer" id="phase-timer">—</div>
+            <div class="wim-hof-counter hidden" id="wim-hof-counter"></div>
+            <div class="retention-tap hidden" id="retention-tap">Tap when ready</div>
+          </div>
+        </div>
+
+        <div class="session-info" id="session-info">
+          <div>Cycle <span id="cycle-count">0</span></div>
+          <div>Session <span id="session-timer">0:00</span></div>
+        </div>
+
+        <div class="tree-preview" id="tree-preview"></div>
+
+        <button class="btn btn-primary start-btn" id="start-btn">Start Session</button>
+      </div>
+    </div>
+
+    <!-- FOREST PANEL -->
+    <div class="tab-panel" id="panel-forest">
+      <div class="forest-stats" id="forest-stats">
+        <div class="forest-stat"><div class="val" id="stat-sessions">0</div><div class="lbl">Sessions</div></div>
+        <div class="forest-stat"><div class="val" id="stat-minutes">0</div><div class="lbl">Minutes</div></div>
+        <div class="forest-stat"><div class="val" id="stat-streak">0</div><div class="lbl">Streak</div></div>
+      </div>
+      <div id="forest-grid-container"></div>
+    </div>
+
+    <!-- MUSIC PANEL -->
+    <div class="tab-panel" id="panel-music">
+      <div class="sound-section">
+        <div class="sound-section-title">Soundscapes <span class="badge">Generated</span></div>
+        <div class="soundscape-grid" id="soundscape-grid"></div>
+        <div class="volume-control" style="margin-top:12px">
+          <label>Volume</label>
+          <input type="range" class="volume-slider" id="soundscape-volume" min="0" max="1" step="0.01" value="0.6">
+        </div>
+      </div>
+
+      <div class="sound-section">
+        <div class="sound-section-title">Music Library <span class="badge">Your Files</span></div>
+        <div class="music-controls hidden" id="music-controls">
+          <button class="ctrl-btn" id="music-prev" title="Previous">⏮</button>
+          <button class="ctrl-btn" id="music-toggle" title="Play/Pause">▶</button>
+          <button class="ctrl-btn" id="music-next" title="Next">⏭</button>
+          <span class="now-playing" id="now-playing">No track</span>
+          <button class="ctrl-btn" id="music-shuffle" title="Shuffle">⤮</button>
+          <button class="ctrl-btn" id="music-loop" title="Loop">↻</button>
+        </div>
+        <div class="volume-control" id="music-volume-control" style="display:none">
+          <label>Music Vol</label>
+          <input type="range" class="volume-slider" id="music-volume" min="0" max="1" step="0.01" value="0.7">
+        </div>
+        <div class="playlist-tabs" id="playlist-tabs"></div>
+        <div class="drop-zone" id="drop-zone">
+          <span class="drop-icon">♫</span>
+          <p>Drop audio files here or tap to browse</p>
+          <input type="file" id="file-input" multiple accept="audio/*" style="display:none">
+        </div>
+        <div class="track-list" id="track-list"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="tab-panel" id="panel-settings">
+      <div class="card">
+        <div class="card-title">Preferences</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Haptic Feedback</div><div class="setting-desc">Vibrate on phase changes</div></div>
+          <button class="toggle on" id="toggle-haptic"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Sound Cues</div><div class="setting-desc">Chime on phase transitions</div></div>
+          <button class="toggle on" id="toggle-sound-cues"></button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Screen Awake</div><div class="setting-desc">Prevent screen sleep during sessions</div></div>
+          <button class="toggle on" id="toggle-wake-lock"></button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Data</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Export Data</div><div class="setting-desc">Download session history as JSON</div></div>
+          <button class="btn btn-sm btn-secondary" id="btn-export">Export</button>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Reset All Data</div><div class="setting-desc">Clear sessions, forest, and settings</div></div>
+          <button class="btn btn-sm btn-danger" id="btn-reset">Reset</button>
+        </div>
+      </div>
+      <div class="card" style="text-align:center; border:none; background:none;">
+        <div style="font-size:12px; color:var(--text-tertiary)">Breathe v1.0 — Built with care</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="overlay-container"></div>
+
+<script>
+// ===== CONSTANTS & CONFIG =====
+const TECHNIQUES = [
+  { id: 'box', name: 'Box Breathing', timing: '4-4-4-4', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 4, type: 'hold' },
+    { label: 'Exhale', duration: 4, type: 'exhale' },
+    { label: 'Hold', duration: 4, type: 'hold' }
+  ]},
+  { id: '478', name: '4-7-8', timing: '4-7-8', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 7, type: 'hold' },
+    { label: 'Exhale', duration: 8, type: 'exhale' }
+  ]},
+  { id: 'wimhof', name: 'Wim Hof', timing: 'Power', special: 'wimhof', phases: [] },
+  { id: 'pursed', name: 'Pursed Lip', timing: '2-4', phases: [
+    { label: 'Inhale', duration: 2, type: 'inhale' },
+    { label: 'Exhale', duration: 4, type: 'exhale' }
+  ]},
+  { id: 'diaphragm', name: 'Diaphragmatic', timing: '4-6', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Exhale', duration: 6, type: 'exhale' }
+  ]},
+  { id: 'nadi', name: 'Nadi Shodhana', timing: 'Alternate', phases: [
+    { label: 'Left In', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 4, type: 'hold' },
+    { label: 'Right Out', duration: 4, type: 'exhale' },
+    { label: 'Right In', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 4, type: 'hold' },
+    { label: 'Left Out', duration: 4, type: 'exhale' }
+  ]},
+  { id: 'resonant', name: 'Resonant', timing: '5-5', phases: [
+    { label: 'Inhale', duration: 5, type: 'inhale' },
+    { label: 'Exhale', duration: 5, type: 'exhale' }
+  ]},
+  { id: 'lion', name: "Lion's Breath", timing: '4-2', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Roar!', duration: 2, type: 'exhale' }
+  ]},
+  { id: 'buteyko', name: 'Buteyko', timing: 'Hold', special: 'buteyko', phases: [] }
+];
+
+const TREE_TYPES = [
+  { id: 'oak', name: 'Oak', unlock: null },
+  { id: 'pine', name: 'Pine', unlock: null },
+  { id: 'cherry', name: 'Cherry Blossom', unlock: { type: 'sessions', value: 5 } },
+  { id: 'willow', name: 'Willow', unlock: { type: 'sessions', value: 10 } },
+  { id: 'bamboo', name: 'Bamboo', unlock: { type: 'minutes', value: 30 } },
+  { id: 'maple', name: 'Maple', unlock: { type: 'sessions', value: 15 } },
+  { id: 'baobab', name: 'Baobab', unlock: { type: 'minutes', value: 60 } },
+  { id: 'bonsai', name: 'Bonsai', unlock: { type: 'sessions', value: 25 } },
+  { id: 'wisteria', name: 'Wisteria', unlock: { type: 'minutes', value: 120 } },
+  { id: 'redwood', name: 'Redwood', unlock: { type: 'both', sessions: 50, minutes: 200 } }
+];
+
+const DURATIONS = [1, 2, 3, 5, 10, 15, 20, 30];
+
+const SOUNDSCAPES = [
+  { id: 'rain', name: 'Rain & Thunder', desc: 'Gentle rain with distant thunder', category: 'nature' },
+  { id: 'ocean', name: 'Ocean Waves', desc: 'Rolling waves on shore', category: 'nature' },
+  { id: 'forest', name: 'Forest Ambience', desc: 'Wind, birds, rustling leaves', category: 'nature' },
+  { id: 'bowls', name: 'Tibetan Bowls', desc: 'Resonant singing bowls', category: 'nature' },
+  { id: 'space', name: 'Deep Space', desc: 'Cosmic drones and shimmer', category: 'nature' },
+  { id: 'chimes', name: 'Wind Chimes', desc: 'Pentatonic metallic tones', category: 'nature' },
+  { id: 'night', name: 'Night Garden', desc: 'Crickets, owls, gentle breeze', category: 'nature' },
+  { id: 'stream', name: 'Mountain Stream', desc: 'Flowing water and birds', category: 'nature' },
+  { id: 'organ', name: 'Interstellar Organ', desc: 'Zimmer-style swelling pads', category: 'cinematic' },
+  { id: 'time', name: 'Time (Piano)', desc: 'Generative piano arpeggios', category: 'cinematic' },
+  { id: 'strings', name: 'Epic Strings', desc: 'Sweeping string ensemble', category: 'cinematic' },
+  { id: 'waltz', name: 'Dreamy Waltz', desc: 'Music box melody, Ghibli-inspired', category: 'cinematic' },
+  { id: 'serenade', name: 'Moonlit Serenade', desc: 'Soft flute over pad chords', category: 'cinematic' },
+  { id: 'adagio', name: 'Classical Adagio', desc: 'Rich harmonic progressions', category: 'cinematic' },
+  { id: 'tension', name: 'Cinematic Tension', desc: 'Building suspense layers', category: 'cinematic' },
+  { id: 'choir', name: 'Ethereal Choir', desc: 'Cathedral choir pads', category: 'cinematic' }
+];
+
+const PLAYLISTS = ['Studio Ghibli', 'Hans Zimmer', 'Nolan Films', 'Meditation & Zen', 'Lo-fi & Ambient', 'Custom'];
+
+// ===== STORAGE MANAGER =====
+class StorageManager {
+  constructor() {
+    this.key = 'breathe_app';
+    this.init();
+  }
+  init() {
+    if (!localStorage.getItem(this.key)) {
+      const data = {
+        version: 1,
+        stats: { totalSessions: 0, totalMinutes: 0, currentStreak: 0, longestStreak: 0, lastSessionDate: null },
+        forest: [],
+        unlocks: {},
+        settings: {
+          selectedTreeType: 'oak', selectedSoundscape: 'none', soundscapeVolume: 0.6,
+          musicVolume: 0.7, breathingPattern: 'box', sessionDuration: 5,
+          hapticFeedback: true, soundCues: true, wakeLock: true
+        }
+      };
+      TREE_TYPES.forEach(t => data.unlocks[t.id] = !t.unlock);
+      localStorage.setItem(this.key, JSON.stringify(data));
+    }
+  }
+  get() { return JSON.parse(localStorage.getItem(this.key)); }
+  save(data) { localStorage.setItem(this.key, JSON.stringify(data)); }
+  getStats() { return this.get().stats; }
+  getForest() { return this.get().forest; }
+  getUnlocks() { return this.get().unlocks; }
+  getSettings() { return this.get().settings; }
+  updateSettings(partial) {
+    const d = this.get();
+    Object.assign(d.settings, partial);
+    this.save(d);
+  }
+  addSession(treeType, minutes, pattern) {
+    const d = this.get();
+    const today = new Date().toISOString().split('T')[0];
+    d.stats.totalSessions++;
+    d.stats.totalMinutes += minutes;
+    if (d.stats.lastSessionDate === today) {
+      // same day
+    } else {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      d.stats.currentStreak = (d.stats.lastSessionDate === yesterday) ? d.stats.currentStreak + 1 : 1;
+    }
+    d.stats.longestStreak = Math.max(d.stats.longestStreak, d.stats.currentStreak);
+    d.stats.lastSessionDate = today;
+    d.forest.push({
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+      treeType, grownAt: new Date().toISOString(), sessionMinutes: minutes, breathingPattern: pattern
+    });
+    // Check unlocks
+    const newUnlocks = [];
+    TREE_TYPES.forEach(t => {
+      if (d.unlocks[t.id]) return;
+      let unlocked = false;
+      if (t.unlock?.type === 'sessions' && d.stats.totalSessions >= t.unlock.value) unlocked = true;
+      if (t.unlock?.type === 'minutes' && d.stats.totalMinutes >= t.unlock.value) unlocked = true;
+      if (t.unlock?.type === 'both' && d.stats.totalSessions >= t.unlock.sessions && d.stats.totalMinutes >= t.unlock.minutes) unlocked = true;
+      if (unlocked) { d.unlocks[t.id] = true; newUnlocks.push(t.name); }
+    });
+    this.save(d);
+    return newUnlocks;
+  }
+  resetAll() {
+    localStorage.removeItem(this.key);
+    this.init();
+  }
+  exportData() { return JSON.stringify(this.get(), null, 2); }
+}
+
+
+// ===== BREATHING ENGINE =====
+class BreathingEngine {
+  constructor(onTick, onPhaseChange, onCycleComplete, onSessionEnd) {
+    this.onTick = onTick;
+    this.onPhaseChange = onPhaseChange;
+    this.onCycleComplete = onCycleComplete;
+    this.onSessionEnd = onSessionEnd;
+    this.running = false;
+    this.technique = null;
+    this.duration = 0;
+    this.phaseIndex = 0;
+    this.phaseElapsed = 0;
+    this.cycleCount = 0;
+    this.sessionElapsed = 0;
+    this.lastTimestamp = 0;
+    this.rafId = null;
+    // Wim Hof state
+    this.wimHofStage = 'power'; // power, retention, recovery
+    this.wimHofBreathCount = 0;
+    this.wimHofRetentionStart = 0;
+    // Buteyko state
+    this.buteykoStage = 'breathe'; // breathe, hold, exhale
+    this.buteykoHoldStart = 0;
+  }
+
+  start(technique, durationMinutes) {
+    this.technique = technique;
+    this.duration = durationMinutes * 60;
+    this.phaseIndex = 0;
+    this.phaseElapsed = 0;
+    this.cycleCount = 0;
+    this.sessionElapsed = 0;
+    this.running = true;
+    this.wimHofStage = 'power';
+    this.wimHofBreathCount = 0;
+    this.buteykoStage = 'breathe';
+    this.lastTimestamp = performance.now();
+    this.emitPhaseChange();
+    this.tick(performance.now());
+  }
+
+  stop() {
+    this.running = false;
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+  }
+
+  tick(timestamp) {
+    if (!this.running) return;
+    const dt = (timestamp - this.lastTimestamp) / 1000;
+    this.lastTimestamp = timestamp;
+    this.sessionElapsed += dt;
+    this.phaseElapsed += dt;
+
+    if (this.sessionElapsed >= this.duration) {
+      this.stop();
+      this.onSessionEnd(this.sessionElapsed, this.cycleCount);
+      return;
+    }
+
+    if (this.technique.special === 'wimhof') {
+      this.tickWimHof(dt);
+    } else if (this.technique.special === 'buteyko') {
+      this.tickButeyko(dt);
+    } else {
+      this.tickNormal();
+    }
+
+    const progress = Math.min(this.sessionElapsed / this.duration, 1);
+    this.onTick(this.getState(progress));
+    this.rafId = requestAnimationFrame(t => this.tick(t));
+  }
+
+  tickNormal() {
+    const phase = this.technique.phases[this.phaseIndex];
+    if (this.phaseElapsed >= phase.duration) {
+      this.phaseElapsed -= phase.duration;
+      this.phaseIndex++;
+      if (this.phaseIndex >= this.technique.phases.length) {
+        this.phaseIndex = 0;
+        this.cycleCount++;
+        this.onCycleComplete(this.cycleCount);
+      }
+      this.emitPhaseChange();
+    }
+  }
+
+  tickWimHof() {
+    if (this.wimHofStage === 'power') {
+      const breathDur = this.wimHofBreathCount < 15 ? 2 : 1.5;
+      const phase = (this.phaseIndex % 2 === 0) ? 'inhale' : 'exhale';
+      if (this.phaseElapsed >= breathDur) {
+        this.phaseElapsed -= breathDur;
+        this.phaseIndex++;
+        if (this.phaseIndex % 2 === 0) this.wimHofBreathCount++;
+        if (this.wimHofBreathCount >= 30) {
+          this.wimHofStage = 'retention';
+          this.wimHofRetentionStart = this.sessionElapsed;
+          this.phaseIndex = 0;
+          this.phaseElapsed = 0;
+        }
+        this.emitPhaseChange();
+      }
+    } else if (this.wimHofStage === 'retention') {
+      // Free hold — user taps to end
+    } else if (this.wimHofStage === 'recovery') {
+      if (this.phaseElapsed >= 15) {
+        this.wimHofStage = 'power';
+        this.wimHofBreathCount = 0;
+        this.phaseIndex = 0;
+        this.phaseElapsed = 0;
+        this.cycleCount++;
+        this.onCycleComplete(this.cycleCount);
+        this.emitPhaseChange();
+      }
+    }
+  }
+
+  tickButeyko() {
+    if (this.buteykoStage === 'breathe') {
+      if (this.phaseElapsed >= 3) {
+        this.buteykoStage = 'hold';
+        this.buteykoHoldStart = this.sessionElapsed;
+        this.phaseElapsed = 0;
+        this.emitPhaseChange();
+      }
+    } else if (this.buteykoStage === 'hold') {
+      // Free hold — user taps to end
+    } else if (this.buteykoStage === 'exhale') {
+      if (this.phaseElapsed >= 4) {
+        this.buteykoStage = 'breathe';
+        this.phaseElapsed = 0;
+        this.cycleCount++;
+        this.onCycleComplete(this.cycleCount);
+        this.emitPhaseChange();
+      }
+    }
+  }
+
+  tapRelease() {
+    if (this.technique.special === 'wimhof' && this.wimHofStage === 'retention') {
+      this.wimHofStage = 'recovery';
+      this.phaseElapsed = 0;
+      this.emitPhaseChange();
+    } else if (this.technique.special === 'buteyko' && this.buteykoStage === 'hold') {
+      this.buteykoStage = 'exhale';
+      this.phaseElapsed = 0;
+      this.emitPhaseChange();
+    }
+  }
+
+  emitPhaseChange() {
+    this.onPhaseChange(this.getCurrentPhase());
+  }
+
+  getCurrentPhase() {
+    if (this.technique.special === 'wimhof') {
+      if (this.wimHofStage === 'power') {
+        return { label: this.phaseIndex % 2 === 0 ? 'Inhale' : 'Exhale', type: this.phaseIndex % 2 === 0 ? 'inhale' : 'exhale', duration: this.wimHofBreathCount < 15 ? 2 : 1.5, extra: `${this.wimHofBreathCount}/30` };
+      } else if (this.wimHofStage === 'retention') {
+        return { label: 'Hold', type: 'hold', duration: Infinity, freeHold: true };
+      } else {
+        return { label: 'Recovery', type: 'inhale', duration: 15 };
+      }
+    } else if (this.technique.special === 'buteyko') {
+      if (this.buteykoStage === 'breathe') return { label: 'Breathe', type: 'inhale', duration: 3 };
+      if (this.buteykoStage === 'hold') return { label: 'Hold', type: 'hold', duration: Infinity, freeHold: true };
+      return { label: 'Exhale', type: 'exhale', duration: 4 };
+    }
+    return this.technique.phases[this.phaseIndex];
+  }
+
+  getState(progress) {
+    const phase = this.getCurrentPhase();
+    let remaining;
+    if (phase.freeHold) {
+      remaining = Math.floor(this.phaseElapsed);
+    } else {
+      remaining = Math.max(0, Math.ceil(phase.duration - this.phaseElapsed));
+    }
+    return {
+      phase, remaining, phaseElapsed: this.phaseElapsed,
+      cycleCount: this.cycleCount, sessionElapsed: this.sessionElapsed,
+      progress, freeHold: phase.freeHold,
+      wimHofExtra: phase.extra || null
+    };
+  }
+}
+
+
+// ===== TREE RENDERER =====
+const TreeRenderer = {
+  colors: {
+    oak: { trunk: '#8B6914', canopy: '#2d5016', canopy2: '#3a6b1e' },
+    pine: { trunk: '#6B4226', canopy: '#1a4d2e', canopy2: '#226b3a' },
+    cherry: { trunk: '#8B6952', canopy: '#d4739d', canopy2: '#e899b8' },
+    willow: { trunk: '#7a6b52', canopy: '#4a7a3a', canopy2: '#6b9b52' },
+    bamboo: { trunk: '#5a8a4a', canopy: '#3d7a2e', canopy2: '#4d9a3e' },
+    maple: { trunk: '#7a5a3a', canopy: '#c44a1a', canopy2: '#e06a2a' },
+    baobab: { trunk: '#9a7a5a', canopy: '#4a7a3a', canopy2: '#5a8a4a' },
+    bonsai: { trunk: '#6a4a2a', canopy: '#2d6b16', canopy2: '#3d8b26' },
+    wisteria: { trunk: '#7a6a5a', canopy: '#8a5aaa', canopy2: '#aa7aca' },
+    redwood: { trunk: '#8a3a1a', canopy: '#1a5a2e', canopy2: '#2a6a3e' }
+  },
+
+  render(treeType, stage, sway = false) {
+    const c = this.colors[treeType] || this.colors.oak;
+    const sw = sway ? ' class="tree-sway"' : '';
+    switch(stage) {
+      case 0: return this.seed(c);
+      case 1: return this.sprout(c, sw);
+      case 2: return this.sapling(treeType, c, sw);
+      case 3: return this.full(treeType, c, sw);
+      default: return this.full(treeType, c, sw);
+    }
+  },
+
+  seed(c) {
+    return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="105" rx="25" ry="8" fill="${c.trunk}" opacity="0.3"/>
+      <ellipse cx="50" cy="100" rx="6" ry="5" fill="${c.canopy}" opacity="0.7"/>
+    </svg>`;
+  },
+
+  sprout(c, sw) {
+    return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <g${sw}>
+        <line x1="50" y1="105" x2="50" y2="70" stroke="${c.trunk}" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="40" cy="72" rx="10" ry="6" fill="${c.canopy}" transform="rotate(-30 40 72)"/>
+        <ellipse cx="60" cy="72" rx="10" ry="6" fill="${c.canopy2}" transform="rotate(30 60 72)"/>
+      </g>
+    </svg>`;
+  },
+
+  sapling(type, c, sw) {
+    const shapes = {
+      oak: `<rect x="46" y="60" width="8" height="45" rx="2" fill="${c.trunk}"/>
+            <circle cx="50" cy="50" r="22" fill="${c.canopy}"/><circle cx="40" cy="45" r="14" fill="${c.canopy2}" opacity="0.7"/>`,
+      pine: `<rect x="47" y="60" width="6" height="45" rx="2" fill="${c.trunk}"/>
+             <polygon points="50,25 30,65 70,65" fill="${c.canopy}"/><polygon points="50,35 35,60 65,60" fill="${c.canopy2}" opacity="0.7"/>`,
+      cherry: `<rect x="46" y="58" width="8" height="47" rx="2" fill="${c.trunk}"/>
+               <circle cx="50" cy="45" r="24" fill="${c.canopy}"/><circle cx="42" cy="38" r="8" fill="${c.canopy2}" opacity="0.5"/>
+               <circle cx="58" cy="42" r="4" fill="#fff" opacity="0.6"/><circle cx="38" cy="48" r="3" fill="#fff" opacity="0.5"/>`,
+      willow: `<rect x="46" y="50" width="8" height="55" rx="2" fill="${c.trunk}"/>
+               <ellipse cx="50" cy="45" rx="28" ry="20" fill="${c.canopy}"/>
+               <path d="M30,45 Q28,80 25,95" stroke="${c.canopy2}" fill="none" stroke-width="2" opacity="0.6"/>
+               <path d="M70,45 Q72,80 75,95" stroke="${c.canopy2}" fill="none" stroke-width="2" opacity="0.6"/>`,
+      bamboo: `<rect x="47" y="30" width="6" height="75" rx="2" fill="${c.trunk}"/>
+               <line x1="47" y1="50" x2="53" y2="50" stroke="${c.canopy2}" stroke-width="1.5"/>
+               <line x1="47" y1="70" x2="53" y2="70" stroke="${c.canopy2}" stroke-width="1.5"/>
+               <ellipse cx="40" cy="35" rx="8" ry="12" fill="${c.canopy}" transform="rotate(-20 40 35)"/>
+               <ellipse cx="60" cy="40" rx="7" ry="10" fill="${c.canopy2}" transform="rotate(15 60 40)"/>`,
+      maple: `<rect x="46" y="58" width="8" height="47" rx="2" fill="${c.trunk}"/>
+              <circle cx="50" cy="42" r="24" fill="${c.canopy}"/><circle cx="38" cy="38" r="12" fill="${c.canopy2}" opacity="0.6"/>`,
+      baobab: `<path d="M40,105 L42,60 Q42,50 50,48 Q58,50 58,60 L60,105Z" fill="${c.trunk}"/>
+               <circle cx="50" cy="40" r="22" fill="${c.canopy}"/>`,
+      bonsai: `<path d="M48,105 Q45,80 42,70 Q38,60 50,55 Q62,60 58,70 Q55,80 52,105Z" fill="${c.trunk}"/>
+               <circle cx="38" cy="50" r="14" fill="${c.canopy}"/><circle cx="58" cy="48" r="12" fill="${c.canopy2}"/>`,
+      wisteria: `<rect x="46" y="50" width="8" height="55" rx="2" fill="${c.trunk}"/>
+                 <ellipse cx="50" cy="42" rx="26" ry="18" fill="${c.canopy}"/>
+                 <ellipse cx="35" cy="60" rx="5" ry="15" fill="${c.canopy2}" opacity="0.7"/>
+                 <ellipse cx="65" cy="55" rx="4" ry="12" fill="${c.canopy2}" opacity="0.6"/>`,
+      redwood: `<rect x="43" y="40" width="14" height="65" rx="3" fill="${c.trunk}"/>
+                <polygon points="50,15 28,55 72,55" fill="${c.canopy}"/><polygon points="50,25 35,50 65,50" fill="${c.canopy2}" opacity="0.7"/>`
+    };
+    return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg"><g${sw}>${shapes[type] || shapes.oak}</g></svg>`;
+  },
+
+  full(type, c, sw) {
+    const shapes = {
+      oak: `<rect x="44" y="55" width="12" height="50" rx="3" fill="${c.trunk}"/>
+            <path d="M44,70 L30,75 L28,105" stroke="${c.trunk}" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="38" r="30" fill="${c.canopy}"/>
+            <circle cx="35" cy="32" r="18" fill="${c.canopy2}" opacity="0.6"/>
+            <circle cx="62" cy="35" r="15" fill="${c.canopy2}" opacity="0.5"/>
+            <circle cx="50" cy="22" r="12" fill="${c.canopy2}" opacity="0.4"/>`,
+      pine: `<rect x="46" y="55" width="8" height="50" rx="2" fill="${c.trunk}"/>
+             <polygon points="50,8 22,55 78,55" fill="${c.canopy}"/>
+             <polygon points="50,18 28,50 72,50" fill="${c.canopy2}" opacity="0.7"/>
+             <polygon points="50,28 34,48 66,48" fill="${c.canopy}" opacity="0.8"/>`,
+      cherry: `<rect x="44" y="52" width="12" height="53" rx="3" fill="${c.trunk}"/>
+               <path d="M44,65 Q30,60 25,70" stroke="${c.trunk}" stroke-width="3" fill="none"/>
+               <circle cx="50" cy="35" r="30" fill="${c.canopy}"/>
+               <circle cx="35" cy="28" r="16" fill="${c.canopy2}" opacity="0.5"/>
+               <circle cx="65" cy="32" r="14" fill="${c.canopy2}" opacity="0.4"/>
+               <circle cx="30" cy="25" r="5" fill="#fff" opacity="0.7"/>
+               <circle cx="55" cy="15" r="4" fill="#fff" opacity="0.6"/>
+               <circle cx="70" cy="28" r="3" fill="#fff" opacity="0.5"/>
+               <circle cx="40" cy="45" r="4" fill="#fff" opacity="0.5"/>
+               <circle cx="62" cy="42" r="3" fill="#ffd4e8" opacity="0.7"/>`,
+      willow: `<rect x="44" y="40" width="12" height="65" rx="3" fill="${c.trunk}"/>
+               <ellipse cx="50" cy="30" rx="35" ry="22" fill="${c.canopy}"/>
+               <path d="M25,30 Q20,65 18,100" stroke="${c.canopy2}" fill="none" stroke-width="2.5" opacity="0.6"/>
+               <path d="M35,28 Q32,60 30,95" stroke="${c.canopy2}" fill="none" stroke-width="2" opacity="0.5"/>
+               <path d="M65,28 Q68,60 70,95" stroke="${c.canopy2}" fill="none" stroke-width="2" opacity="0.5"/>
+               <path d="M75,30 Q78,65 82,100" stroke="${c.canopy2}" fill="none" stroke-width="2.5" opacity="0.6"/>
+               <path d="M50,22 Q48,55 46,85" stroke="${c.canopy2}" fill="none" stroke-width="1.5" opacity="0.4"/>`,
+      bamboo: `<rect x="45" y="15" width="7" height="90" rx="2" fill="${c.trunk}"/>
+               <rect x="56" y="25" width="6" height="80" rx="2" fill="${c.trunk}" opacity="0.8"/>
+               <rect x="36" y="30" width="5" height="75" rx="2" fill="${c.trunk}" opacity="0.7"/>
+               <line x1="45" y1="35" x2="52" y2="35" stroke="${c.canopy2}" stroke-width="2"/>
+               <line x1="45" y1="55" x2="52" y2="55" stroke="${c.canopy2}" stroke-width="2"/>
+               <line x1="45" y1="75" x2="52" y2="75" stroke="${c.canopy2}" stroke-width="2"/>
+               <ellipse cx="35" cy="20" rx="12" ry="16" fill="${c.canopy}" transform="rotate(-25 35 20)"/>
+               <ellipse cx="58" cy="18" rx="10" ry="14" fill="${c.canopy2}" transform="rotate(20 58 18)"/>
+               <ellipse cx="48" cy="12" rx="8" ry="10" fill="${c.canopy}" transform="rotate(-10 48 12)" opacity="0.8"/>`,
+      maple: `<rect x="44" y="52" width="12" height="53" rx="3" fill="${c.trunk}"/>
+              <path d="M44,68 Q32,62 22,72" stroke="${c.trunk}" stroke-width="3" fill="none"/>
+              <circle cx="50" cy="32" r="30" fill="${c.canopy}"/>
+              <circle cx="32" cy="25" r="16" fill="${c.canopy2}" opacity="0.6"/>
+              <circle cx="68" cy="28" r="14" fill="${c.canopy2}" opacity="0.5"/>
+              <circle cx="50" cy="15" r="12" fill="${c.canopy2}" opacity="0.4"/>`,
+      baobab: `<path d="M35,105 L38,55 Q38,35 50,30 Q62,35 62,55 L65,105Z" fill="${c.trunk}"/>
+               <path d="M38,50 Q25,45 20,55" stroke="${c.trunk}" stroke-width="5" fill="none" stroke-linecap="round"/>
+               <path d="M62,50 Q75,45 80,55" stroke="${c.trunk}" stroke-width="5" fill="none" stroke-linecap="round"/>
+               <circle cx="50" cy="22" r="22" fill="${c.canopy}"/>
+               <circle cx="22" cy="48" r="12" fill="${c.canopy2}"/>
+               <circle cx="78" cy="48" r="12" fill="${c.canopy2}"/>`,
+      bonsai: `<path d="M46,105 Q42,85 38,72 Q32,58 40,50 Q35,45 42,38" stroke="${c.trunk}" stroke-width="6" fill="none" stroke-linecap="round"/>
+               <path d="M50,60 Q58,52 62,55" stroke="${c.trunk}" stroke-width="4" fill="none" stroke-linecap="round"/>
+               <circle cx="38" cy="32" r="18" fill="${c.canopy}"/>
+               <circle cx="55" cy="28" r="14" fill="${c.canopy2}"/>
+               <circle cx="65" cy="48" r="12" fill="${c.canopy}"/>
+               <rect x="30" y="103" width="40" height="6" rx="2" fill="#5a4a3a"/>`,
+      wisteria: `<rect x="44" y="40" width="12" height="65" rx="3" fill="${c.trunk}"/>
+                 <path d="M44,55 Q30,50 22,58" stroke="${c.trunk}" stroke-width="3" fill="none"/>
+                 <path d="M56,55 Q70,50 78,58" stroke="${c.trunk}" stroke-width="3" fill="none"/>
+                 <ellipse cx="50" cy="30" rx="34" ry="22" fill="${c.canopy}"/>
+                 <ellipse cx="25" cy="55" rx="6" ry="22" fill="${c.canopy2}" opacity="0.8"/>
+                 <ellipse cx="38" cy="60" rx="5" ry="18" fill="${c.canopy2}" opacity="0.7"/>
+                 <ellipse cx="62" cy="58" rx="5" ry="20" fill="${c.canopy2}" opacity="0.7"/>
+                 <ellipse cx="75" cy="52" rx="6" ry="18" fill="${c.canopy2}" opacity="0.8"/>
+                 <ellipse cx="50" cy="55" rx="4" ry="15" fill="${c.canopy2}" opacity="0.6"/>`,
+      redwood: `<rect x="40" y="30" width="20" height="75" rx="4" fill="${c.trunk}"/>
+                <rect x="38" y="85" width="24" height="20" rx="4" fill="${c.trunk}" opacity="0.8"/>
+                <polygon points="50,2 18,45 82,45" fill="${c.canopy}"/>
+                <polygon points="50,12 25,42 75,42" fill="${c.canopy2}" opacity="0.7"/>
+                <polygon points="50,22 32,40 68,40" fill="${c.canopy}" opacity="0.8"/>
+                <polygon points="50,8 22,50 78,50" fill="${c.canopy}" opacity="0.3"/>`
+    };
+    return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg"><g${sw}>${shapes[type] || shapes.oak}</g></svg>`;
+  }
+};
+
+
+// ===== SOUNDSCAPE ENGINE =====
+class SoundscapeEngine {
+  constructor() {
+    this.ctx = null;
+    this.masterGain = null;
+    this.nodes = [];
+    this.active = null;
+    this.intervals = [];
+    this.timeouts = [];
+  }
+
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.connect(this.ctx.destination);
+    this.masterGain.gain.value = 0.6;
+  }
+
+  setVolume(v) {
+    if (this.masterGain) this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1);
+  }
+
+  stop() {
+    this.nodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
+    this.nodes = [];
+    this.intervals.forEach(clearInterval);
+    this.intervals = [];
+    this.timeouts.forEach(clearTimeout);
+    this.timeouts = [];
+    this.active = null;
+  }
+
+  play(id) {
+    this.init();
+    this.stop();
+    this.active = id;
+    const fn = this['_' + id];
+    if (fn) fn.call(this);
+  }
+
+  // Helper: create noise buffer
+  noiseBuffer(type = 'white', seconds = 2) {
+    const sr = this.ctx.sampleRate;
+    const len = sr * seconds;
+    const buf = this.ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    if (type === 'white') {
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    } else if (type === 'pink') {
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99886*b0 + w*0.0555179; b1 = 0.99332*b1 + w*0.0750759;
+        b2 = 0.96900*b2 + w*0.1538520; b3 = 0.86650*b3 + w*0.3104856;
+        b4 = 0.55000*b4 + w*0.5329522; b5 = -0.7616*b5 - w*0.0168980;
+        d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w*0.5362) * 0.11;
+        b6 = w * 0.115926;
+      }
+    } else { // brown
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        last = (last + (0.02 * w)) / 1.02;
+        d[i] = last * 3.5;
+      }
+    }
+    return buf;
+  }
+
+  // Helper: noise source node
+  noise(type = 'white') {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(type);
+    src.loop = true;
+    this.nodes.push(src);
+    return src;
+  }
+
+  // Helper: LFO
+  lfo(freq, min, max) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.gain.value = (max - min) / 2;
+    const offset = this.ctx.createConstantSource();
+    offset.offset.value = (max + min) / 2;
+    osc.start();
+    offset.start();
+    this.nodes.push(osc, offset);
+    return { osc, gain, offset };
+  }
+
+  // Helper: simple oscillator
+  osc(type, freq) {
+    const o = this.ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = freq;
+    this.nodes.push(o);
+    return o;
+  }
+
+  // Helper: gain node
+  gain(v = 1) {
+    const g = this.ctx.createGain();
+    g.gain.value = v;
+    return g;
+  }
+
+  // Helper: filter
+  filter(type, freq, q = 1) {
+    const f = this.ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    return f;
+  }
+
+  // 1. Rain & Thunder
+  _rain() {
+    const n = this.noise('brown');
+    const lp = this.filter('lowpass', 800, 0.5);
+    const g = this.gain(0.4);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+
+    // Higher freq rain drops
+    const n2 = this.noise('white');
+    const bp = this.filter('bandpass', 3000, 2);
+    const g2 = this.gain(0.08);
+    n2.connect(bp); bp.connect(g2); g2.connect(this.masterGain);
+    n2.start();
+
+    // Thunder
+    const thunder = () => {
+      if (this.active !== 'rain') return;
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 40 + Math.random() * 30;
+      const tg = this.gain(0);
+      const tf = this.filter('lowpass', 100);
+      o.connect(tf); tf.connect(tg); tg.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      tg.gain.setValueAtTime(0, t);
+      tg.gain.linearRampToValueAtTime(0.5 + Math.random()*0.3, t + 0.1);
+      tg.gain.exponentialRampToValueAtTime(0.001, t + 2 + Math.random()*2);
+      o.start(t); o.stop(t + 4);
+      this.timeouts.push(setTimeout(thunder, 8000 + Math.random() * 15000));
+    };
+    this.timeouts.push(setTimeout(thunder, 3000 + Math.random() * 5000));
+  }
+
+  // 2. Ocean Waves
+  _ocean() {
+    const n = this.noise('brown');
+    const lp = this.filter('lowpass', 500);
+    const g = this.gain(0.5);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+
+    // LFO for wave swell
+    const modulate = () => {
+      if (this.active !== 'ocean') return;
+      const cycle = 6 + Math.random() * 4;
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.linearRampToValueAtTime(0.55, t + cycle * 0.4);
+      g.gain.linearRampToValueAtTime(0.15, t + cycle);
+      lp.frequency.setValueAtTime(300, t);
+      lp.frequency.linearRampToValueAtTime(700, t + cycle * 0.4);
+      lp.frequency.linearRampToValueAtTime(300, t + cycle);
+      this.timeouts.push(setTimeout(modulate, cycle * 1000));
+    };
+    modulate();
+  }
+
+  // 3. Forest Ambience
+  _forest() {
+    // Wind
+    const n = this.noise('pink');
+    const lp = this.filter('lowpass', 400);
+    const g = this.gain(0.15);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+
+    // Bird calls
+    const bird = () => {
+      if (this.active !== 'forest') return;
+      const freq = 1800 + Math.random() * 2000;
+      const o = this.osc('sine', freq);
+      const bg = this.gain(0);
+      o.connect(bg); bg.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      const dur = 0.1 + Math.random() * 0.3;
+      bg.gain.setValueAtTime(0, t);
+      bg.gain.linearRampToValueAtTime(0.06, t + 0.02);
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.linearRampToValueAtTime(freq * (1 + Math.random()*0.3), t + dur);
+      bg.gain.linearRampToValueAtTime(0, t + dur);
+      o.start(t); o.stop(t + dur + 0.1);
+      // Sometimes chirp sequence
+      if (Math.random() > 0.5) {
+        this.timeouts.push(setTimeout(bird, 200 + Math.random() * 400));
+      } else {
+        this.timeouts.push(setTimeout(bird, 3000 + Math.random() * 8000));
+      }
+    };
+    bird();
+
+    // Leaf rustle
+    const rustle = () => {
+      if (this.active !== 'forest') return;
+      const n2 = this.noise('white');
+      const hp = this.filter('highpass', 2000);
+      const rg = this.gain(0);
+      n2.connect(hp); hp.connect(rg); rg.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      const dur = 0.5 + Math.random();
+      rg.gain.setValueAtTime(0, t);
+      rg.gain.linearRampToValueAtTime(0.04, t + 0.1);
+      rg.gain.linearRampToValueAtTime(0, t + dur);
+      n2.start(t); n2.stop(t + dur + 0.1);
+      this.timeouts.push(setTimeout(rustle, 2000 + Math.random() * 6000));
+    };
+    rustle();
+  }
+
+  // 4. Tibetan Bowls
+  _bowls() {
+    const freqs = [174, 261, 348, 523, 697];
+    const playBowl = () => {
+      if (this.active !== 'bowls') return;
+      const f = freqs[Math.floor(Math.random() * freqs.length)];
+      const harmonics = [1, 2.01, 3.03, 4.07];
+      harmonics.forEach((h, i) => {
+        const o = this.osc('sine', f * h);
+        const g = this.gain(0);
+        o.connect(g); g.connect(this.masterGain);
+        const t = this.ctx.currentTime;
+        const vol = 0.12 / (i + 1);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 6 + Math.random()*3);
+        // Vibrato
+        const lfo = this.osc('sine', 4 + Math.random()*2);
+        const lfoG = this.gain(f * h * 0.003);
+        lfo.connect(lfoG); lfoG.connect(o.frequency);
+        lfo.start(t); o.start(t); o.stop(t + 10);
+        lfo.stop(t + 10);
+      });
+      this.timeouts.push(setTimeout(playBowl, 4000 + Math.random() * 6000));
+    };
+    playBowl();
+  }
+
+  // 5. Deep Space
+  _space() {
+    // Low drone
+    const o1 = this.osc('sawtooth', 55);
+    const f1 = this.filter('lowpass', 200);
+    const g1 = this.gain(0.12);
+    o1.connect(f1); f1.connect(g1); g1.connect(this.masterGain);
+    o1.start();
+
+    // Pad
+    const o2 = this.osc('sawtooth', 110);
+    const f2 = this.filter('lowpass', 300);
+    const g2 = this.gain(0.06);
+    o2.connect(f2); f2.connect(g2); g2.connect(this.masterGain);
+    o2.start();
+
+    // LFO filter sweep
+    const sweep = () => {
+      if (this.active !== 'space') return;
+      const t = this.ctx.currentTime;
+      const dur = 8 + Math.random() * 8;
+      f2.frequency.setValueAtTime(100, t);
+      f2.frequency.linearRampToValueAtTime(600, t + dur/2);
+      f2.frequency.linearRampToValueAtTime(100, t + dur);
+      this.timeouts.push(setTimeout(sweep, dur * 1000));
+    };
+    sweep();
+
+    // Shimmer tones
+    const shimmer = () => {
+      if (this.active !== 'space') return;
+      const freq = [220, 330, 440, 550, 660][Math.floor(Math.random()*5)] * (1 + Math.random()*0.5);
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.03, t + 2);
+      g.gain.linearRampToValueAtTime(0, t + 5);
+      o.start(t); o.stop(t + 6);
+      this.timeouts.push(setTimeout(shimmer, 3000 + Math.random() * 5000));
+    };
+    shimmer();
+  }
+
+  // 6. Wind Chimes
+  _chimes() {
+    const pentatonic = [523, 587, 659, 784, 880, 1047, 1175];
+    const chime = () => {
+      if (this.active !== 'chimes') return;
+      const freq = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+      const harmonics = [1, 2.2, 3.5, 5.1]; // metallic inharmonics
+      harmonics.forEach((h, i) => {
+        const o = this.osc('sine', freq * h);
+        const g = this.gain(0);
+        o.connect(g); g.connect(this.masterGain);
+        const t = this.ctx.currentTime;
+        const vol = 0.08 / (i + 1);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2 + Math.random()*2);
+        o.start(t); o.stop(t + 5);
+      });
+      this.timeouts.push(setTimeout(chime, 1500 + Math.random() * 4000));
+    };
+    chime();
+
+    // Gentle wind
+    const n = this.noise('pink');
+    const lp = this.filter('lowpass', 300);
+    const g = this.gain(0.05);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+  }
+
+  // 7. Night Garden
+  _night() {
+    // Crickets - bandpass chirps
+    const cricket = () => {
+      if (this.active !== 'night') return;
+      const freq = 4000 + Math.random() * 1000;
+      const o = this.osc('sine', freq);
+      const bp = this.filter('bandpass', freq, 10);
+      const g = this.gain(0);
+      o.connect(bp); bp.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      // Rapid chirp
+      for (let j = 0; j < 3 + Math.floor(Math.random()*4); j++) {
+        g.gain.setValueAtTime(0.04, t + j*0.08);
+        g.gain.setValueAtTime(0, t + j*0.08 + 0.04);
+      }
+      o.start(t); o.stop(t + 1);
+      this.timeouts.push(setTimeout(cricket, 500 + Math.random() * 2000));
+    };
+    cricket();
+
+    // Owl
+    const owl = () => {
+      if (this.active !== 'night') return;
+      [0, 0.4].forEach(offset => {
+        const o = this.osc('sine', 340);
+        const g = this.gain(0);
+        o.connect(g); g.connect(this.masterGain);
+        const t = this.ctx.currentTime + offset;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.08, t + 0.05);
+        o.frequency.setValueAtTime(380, t);
+        o.frequency.linearRampToValueAtTime(320, t + 0.3);
+        g.gain.linearRampToValueAtTime(0, t + 0.3);
+        o.start(t); o.stop(t + 0.4);
+      });
+      this.timeouts.push(setTimeout(owl, 8000 + Math.random() * 15000));
+    };
+    this.timeouts.push(setTimeout(owl, 2000));
+
+    // Breeze
+    const n = this.noise('pink');
+    const lp = this.filter('lowpass', 250);
+    const g = this.gain(0.06);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+  }
+
+  // 8. Mountain Stream
+  _stream() {
+    // Water - white noise bandpassed
+    const n = this.noise('white');
+    const bp = this.filter('bandpass', 2000, 0.5);
+    const g = this.gain(0.2);
+    n.connect(bp); bp.connect(g); g.connect(this.masterGain);
+    n.start();
+
+    // Low rumble
+    const n2 = this.noise('brown');
+    const lp = this.filter('lowpass', 150);
+    const g2 = this.gain(0.15);
+    n2.connect(lp); lp.connect(g2); g2.connect(this.masterGain);
+    n2.start();
+
+    // Occasional bird
+    const bird = () => {
+      if (this.active !== 'stream') return;
+      const freq = 2200 + Math.random() * 1500;
+      const o = this.osc('sine', freq);
+      const bg = this.gain(0);
+      o.connect(bg); bg.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      bg.gain.setValueAtTime(0, t);
+      bg.gain.linearRampToValueAtTime(0.04, t + 0.02);
+      o.frequency.exponentialRampToValueAtTime(freq * 1.2, t + 0.15);
+      bg.gain.linearRampToValueAtTime(0, t + 0.2);
+      o.start(t); o.stop(t + 0.3);
+      this.timeouts.push(setTimeout(bird, 5000 + Math.random() * 12000));
+    };
+    bird();
+  }
+
+
+  // 9. Interstellar Organ
+  _organ() {
+    const baseFreqs = [65.4, 130.8, 196, 261.6]; // C2, C3, G3, C4
+    baseFreqs.forEach((f, i) => {
+      const o = this.osc('sine', f);
+      const o2 = this.osc('sine', f * 2.01); // slight detune for organ
+      const o3 = this.osc('sine', f * 3);
+      const g = this.gain(0);
+      o.connect(g); o2.connect(g); o3.connect(g);
+      g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      const vol = 0.06 / (i + 1);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 4); // slow attack
+      o.start(t); o2.start(t); o3.start(t);
+    });
+
+    // Swelling pad with filter sweep
+    const pad = this.osc('sawtooth', 130.8);
+    const f = this.filter('lowpass', 200);
+    const g = this.gain(0.04);
+    pad.connect(f); f.connect(g); g.connect(this.masterGain);
+    pad.start();
+
+    const swell = () => {
+      if (this.active !== 'organ') return;
+      const t = this.ctx.currentTime;
+      const dur = 12 + Math.random() * 8;
+      f.frequency.setValueAtTime(100, t);
+      f.frequency.linearRampToValueAtTime(800, t + dur * 0.6);
+      f.frequency.linearRampToValueAtTime(100, t + dur);
+      g.gain.setValueAtTime(0.02, t);
+      g.gain.linearRampToValueAtTime(0.08, t + dur * 0.6);
+      g.gain.linearRampToValueAtTime(0.02, t + dur);
+      this.timeouts.push(setTimeout(swell, dur * 1000));
+    };
+    swell();
+  }
+
+  // 10. Time (Piano) - Generative piano arpeggios
+  _time() {
+    // Am pentatonic: A C D E G
+    const notes = [220, 261.6, 293.7, 329.6, 392, 440, 523.3, 587.3, 659.3, 784];
+    let noteIndex = 0;
+    const tempo = 1200; // ms between notes
+
+    // Warm pad underneath
+    const padNotes = [220, 261.6, 329.6];
+    padNotes.forEach(f => {
+      const o = this.osc('sine', f);
+      const g = this.gain(0.04);
+      o.connect(g); g.connect(this.masterGain);
+      o.start();
+    });
+
+    // Piano-like tone (sharp attack, decay)
+    const playNote = () => {
+      if (this.active !== 'time') return;
+      const freq = notes[noteIndex % notes.length];
+      // Piano has harmonics with quick decay
+      [1, 2, 3, 4].forEach((h, i) => {
+        const o = this.osc('sine', freq * h);
+        const g = this.gain(0);
+        o.connect(g); g.connect(this.masterGain);
+        const t = this.ctx.currentTime;
+        const vol = 0.1 / (i + 1);
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(vol * 0.3, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 3);
+        o.start(t); o.stop(t + 3.5);
+      });
+      noteIndex++;
+      // Occasionally skip or repeat for variation
+      if (Math.random() > 0.8) noteIndex += Math.floor(Math.random() * 3) - 1;
+      this.timeouts.push(setTimeout(playNote, tempo + (Math.random() - 0.5) * 200));
+    };
+    playNote();
+  }
+
+  // 11. Epic Strings
+  _strings() {
+    // Chord progressions: Am - F - C - G (i - VI - III - VII)
+    const chords = [
+      [220, 261.6, 329.6], // Am
+      [174.6, 220, 261.6], // F
+      [261.6, 329.6, 392],  // C
+      [196, 246.9, 293.7]   // G
+    ];
+    let chordIdx = 0;
+
+    const playChord = () => {
+      if (this.active !== 'strings') return;
+      const chord = chords[chordIdx % chords.length];
+      chord.forEach(freq => {
+        // Sawtooth through lowpass = string-like
+        const o = this.osc('sawtooth', freq);
+        const o2 = this.osc('sawtooth', freq * 1.003); // slight detune for ensemble
+        const f = this.filter('lowpass', 600);
+        const g = this.gain(0);
+        o.connect(f); o2.connect(f); f.connect(g); g.connect(this.masterGain);
+        const t = this.ctx.currentTime;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.05, t + 3); // slow crescendo
+        g.gain.linearRampToValueAtTime(0.03, t + 7);
+        g.gain.linearRampToValueAtTime(0, t + 8);
+        o.start(t); o2.start(t);
+        o.stop(t + 8.5); o2.stop(t + 8.5);
+      });
+      chordIdx++;
+      this.timeouts.push(setTimeout(playChord, 8000));
+    };
+    playChord();
+  }
+
+  // 12. Dreamy Waltz - Ghibli-inspired music box
+  _waltz() {
+    // C major pentatonic melody: C D E G A
+    const scale = [523.3, 587.3, 659.3, 784, 880, 1047, 1175];
+    let melodyIdx = 0;
+    const pattern = [0, 2, 4, 2, 3, 1, 0, 4, 5, 3, 2, 0]; // melodic pattern
+    const tempo = 600; // 3/4 feel
+
+    // Gentle pad
+    [261.6, 329.6, 392].forEach(f => {
+      const o = this.osc('triangle', f);
+      const g = this.gain(0.02);
+      o.connect(g); g.connect(this.masterGain);
+      o.start();
+    });
+
+    const playMelody = () => {
+      if (this.active !== 'waltz') return;
+      const idx = pattern[melodyIdx % pattern.length];
+      const freq = scale[idx];
+      // Music box = triangle wave with fast decay
+      const o = this.osc('triangle', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+      o.start(t); o.stop(t + 2);
+      melodyIdx++;
+      this.timeouts.push(setTimeout(playMelody, tempo));
+    };
+    playMelody();
+  }
+
+  // 13. Moonlit Serenade - Soft flute melody
+  _serenade() {
+    // Pentatonic: D E G A B
+    const notes = [293.7, 329.6, 392, 440, 493.9, 587.3, 659.3, 784];
+    let noteIdx = 0;
+
+    // Sustained pad chords
+    const padChords = [293.7, 440, 587.3];
+    padChords.forEach(f => {
+      const o = this.osc('sine', f);
+      const g = this.gain(0.03);
+      o.connect(g); g.connect(this.masterGain);
+      o.start();
+    });
+
+    // Flute-like: sine with slight vibrato and breath noise
+    const playFlute = () => {
+      if (this.active !== 'serenade') return;
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+
+      // Vibrato
+      const vib = this.osc('sine', 5);
+      const vibG = this.gain(freq * 0.008);
+      vib.connect(vibG); vibG.connect(o.frequency);
+      vib.start();
+
+      const t = this.ctx.currentTime;
+      const dur = 1 + Math.random() * 2;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.2);
+      g.gain.setValueAtTime(0.06, t + dur - 0.3);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      o.start(t); o.stop(t + dur + 0.1);
+      vib.stop(t + dur + 0.1);
+
+      const gap = Math.random() > 0.7 ? 2000 : 800;
+      this.timeouts.push(setTimeout(playFlute, dur * 1000 + gap));
+    };
+    playFlute();
+  }
+
+  // 14. Classical Adagio
+  _adagio() {
+    // Rich harmonic progressions: Cm - Ab - Eb - Bb
+    const progressions = [
+      [130.8, 156, 196],   // Cm
+      [104, 130.8, 156],   // Ab
+      [156, 196, 233],     // Eb
+      [116.5, 146.8, 174.6] // Bb
+    ];
+    let progIdx = 0;
+
+    const playProgression = () => {
+      if (this.active !== 'adagio') return;
+      const chord = progressions[progIdx % progressions.length];
+      chord.forEach(freq => {
+        // Rich overtone stacks
+        [1, 2, 3, 4, 5, 6].forEach((h, i) => {
+          const o = this.osc('sine', freq * h);
+          const g = this.gain(0);
+          o.connect(g); g.connect(this.masterGain);
+          const t = this.ctx.currentTime;
+          const vol = 0.04 / (i + 1);
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(vol, t + 3);
+          g.gain.setValueAtTime(vol, t + 7);
+          g.gain.linearRampToValueAtTime(0, t + 10);
+          o.start(t); o.stop(t + 10.5);
+        });
+      });
+      progIdx++;
+      this.timeouts.push(setTimeout(playProgression, 10000));
+    };
+    playProgression();
+  }
+
+  // 15. Cinematic Tension
+  _tension() {
+    // Low pulsing bass drone
+    const bass = this.osc('sine', 45);
+    const bassG = this.gain(0.15);
+    bass.connect(bassG); bassG.connect(this.masterGain);
+    bass.start();
+
+    // Pulse the bass
+    const pulse = () => {
+      if (this.active !== 'tension') return;
+      const t = this.ctx.currentTime;
+      bassG.gain.setValueAtTime(0.15, t);
+      bassG.gain.linearRampToValueAtTime(0.05, t + 0.8);
+      bassG.gain.linearRampToValueAtTime(0.15, t + 1.6);
+      this.timeouts.push(setTimeout(pulse, 1600));
+    };
+    pulse();
+
+    // Ticking rhythm
+    const tick = () => {
+      if (this.active !== 'tension') return;
+      const n = this.noise('white');
+      const hp = this.filter('highpass', 4000);
+      const g = this.gain(0);
+      n.connect(hp); hp.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+      n.start(t); n.stop(t + 0.1);
+      this.timeouts.push(setTimeout(tick, 800));
+    };
+    tick();
+
+    // Slowly building harmonic layers
+    let layer = 0;
+    const buildLayer = () => {
+      if (this.active !== 'tension') return;
+      if (layer >= 8) layer = 0;
+      const freq = 55 * (layer + 1);
+      const o = this.osc('sawtooth', freq);
+      const f = this.filter('lowpass', 200 + layer * 50);
+      const g = this.gain(0);
+      o.connect(f); f.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.02, t + 5);
+      g.gain.linearRampToValueAtTime(0, t + 15);
+      o.start(t); o.stop(t + 16);
+      layer++;
+      this.timeouts.push(setTimeout(buildLayer, 8000));
+    };
+    buildLayer();
+  }
+
+  // 16. Ethereal Choir
+  _choir() {
+    // Formant-filtered noise simulating "aah" vowel
+    // Formants for "aah": ~730Hz, ~1090Hz, ~2440Hz
+    const formants = [730, 1090, 2440];
+    const chordNotes = [
+      [130.8, 164.8, 196],    // C major
+      [110, 130.8, 164.8],    // Am
+      [146.8, 174.6, 220],    // D
+      [164.8, 196, 246.9]     // E
+    ];
+    let chordIdx = 0;
+
+    const playChoir = () => {
+      if (this.active !== 'choir') return;
+      const chord = chordNotes[chordIdx % chordNotes.length];
+      chord.forEach(freq => {
+        // Noise-based formant voices
+        const n = this.noise('pink');
+        const bp1 = this.filter('bandpass', freq, 15);
+        const bp2 = this.filter('bandpass', freq * 2, 10);
+        const g = this.gain(0);
+        n.connect(bp1); bp1.connect(g);
+        n.connect(bp2); bp2.connect(g);
+        g.connect(this.masterGain);
+        const t = this.ctx.currentTime;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.06, t + 3);
+        g.gain.setValueAtTime(0.06, t + 8);
+        g.gain.linearRampToValueAtTime(0, t + 12);
+        n.start(t); n.stop(t + 12.5);
+
+        // Add subtle sine for pitch clarity
+        const o = this.osc('sine', freq);
+        const og = this.gain(0);
+        o.connect(og); og.connect(this.masterGain);
+        og.gain.setValueAtTime(0, t);
+        og.gain.linearRampToValueAtTime(0.03, t + 3);
+        og.gain.setValueAtTime(0.03, t + 8);
+        og.gain.linearRampToValueAtTime(0, t + 12);
+        o.start(t); o.stop(t + 12.5);
+      });
+      chordIdx++;
+      this.timeouts.push(setTimeout(playChoir, 12000));
+    };
+    playChoir();
+  }
+}
+
+
+// ===== MUSIC PLAYER (IndexedDB + HTML5 Audio) =====
+class MusicPlayer {
+  constructor() {
+    this.db = null;
+    this.audio = new Audio();
+    this.audio2 = new Audio(); // for crossfade
+    this.currentAudio = this.audio;
+    this.tracks = [];
+    this.currentIdx = -1;
+    this.playing = false;
+    this.shuffle = false;
+    this.loop = false;
+    this.volume = 0.7;
+    this.currentPlaylist = 'all';
+    this.onTrackChange = null;
+    this.onStateChange = null;
+
+    this.audio.volume = this.volume;
+    this.audio2.volume = 0;
+
+    this.audio.addEventListener('ended', () => this.next());
+    this.audio2.addEventListener('ended', () => this.next());
+  }
+
+  async initDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('breathe_music', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('music_tracks')) {
+          const store = db.createObjectStore('music_tracks', { keyPath: 'id', autoIncrement: true });
+          store.createIndex('playlist', 'playlist', { unique: false });
+        }
+      };
+      req.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async loadTracks() {
+    if (!this.db) await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('music_tracks', 'readonly');
+      const store = tx.objectStore('music_tracks');
+      const req = store.getAll();
+      req.onsuccess = () => { this.tracks = req.result; resolve(this.tracks); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async addTrack(file, playlist) {
+    if (!this.db) await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('music_tracks', 'readwrite');
+      const store = tx.objectStore('music_tracks');
+      const track = {
+        name: file.name.replace(/\.[^/.]+$/, ''),
+        playlist: playlist,
+        blob: file,
+        duration: 0,
+        addedAt: new Date().toISOString()
+      };
+      const req = store.add(track);
+      req.onsuccess = () => { track.id = req.result; this.tracks.push(track); resolve(track); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async deleteTrack(id) {
+    if (!this.db) await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('music_tracks', 'readwrite');
+      const req = tx.objectStore('music_tracks').delete(id);
+      req.onsuccess = () => {
+        this.tracks = this.tracks.filter(t => t.id !== id);
+        resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  getFilteredTracks() {
+    if (this.currentPlaylist === 'all') return this.tracks;
+    return this.tracks.filter(t => t.playlist === this.currentPlaylist);
+  }
+
+  async play(idx) {
+    const filtered = this.getFilteredTracks();
+    if (idx < 0 || idx >= filtered.length) return;
+    this.currentIdx = idx;
+    const track = filtered[idx];
+    const url = URL.createObjectURL(track.blob);
+
+    // Crossfade
+    const outgoing = this.currentAudio;
+    const incoming = this.currentAudio === this.audio ? this.audio2 : this.audio;
+    incoming.src = url;
+    incoming.volume = 0;
+    incoming.play().catch(() => {});
+
+    // Fade
+    const fadeSteps = 20;
+    const fadeDur = 2000;
+    let step = 0;
+    const fadeInterval = setInterval(() => {
+      step++;
+      const pct = step / fadeSteps;
+      incoming.volume = Math.min(pct * this.volume, this.volume);
+      outgoing.volume = Math.max((1 - pct) * this.volume, 0);
+      if (step >= fadeSteps) {
+        clearInterval(fadeInterval);
+        outgoing.pause();
+        outgoing.src = '';
+        this.currentAudio = incoming;
+      }
+    }, fadeDur / fadeSteps);
+
+    this.playing = true;
+    if (this.onTrackChange) this.onTrackChange(track);
+    if (this.onStateChange) this.onStateChange(true);
+  }
+
+  togglePlay() {
+    if (!this.playing && this.currentIdx >= 0) {
+      this.currentAudio.play().catch(() => {});
+      this.playing = true;
+    } else if (!this.playing && this.getFilteredTracks().length > 0) {
+      this.play(0);
+      return;
+    } else {
+      this.currentAudio.pause();
+      this.playing = false;
+    }
+    if (this.onStateChange) this.onStateChange(this.playing);
+  }
+
+  next() {
+    const filtered = this.getFilteredTracks();
+    if (!filtered.length) return;
+    let next;
+    if (this.shuffle) {
+      next = Math.floor(Math.random() * filtered.length);
+    } else if (this.loop && this.currentIdx >= filtered.length - 1) {
+      next = 0;
+    } else {
+      next = this.currentIdx + 1;
+    }
+    if (next < filtered.length) this.play(next);
+  }
+
+  prev() {
+    const filtered = this.getFilteredTracks();
+    if (!filtered.length) return;
+    const prev = Math.max(0, this.currentIdx - 1);
+    this.play(prev);
+  }
+
+  setVolume(v) {
+    this.volume = v;
+    this.currentAudio.volume = v;
+  }
+
+  stopAll() {
+    this.audio.pause();
+    this.audio2.pause();
+    this.playing = false;
+  }
+}
+
+
+// ===== APP CONTROLLER =====
+class App {
+  constructor() {
+    this.storage = new StorageManager();
+    this.soundscape = new SoundscapeEngine();
+    this.music = new MusicPlayer();
+    this.engine = null;
+    this.sessionActive = false;
+    this.selectedTechnique = TECHNIQUES[0];
+    this.selectedDuration = 5;
+    this.selectedTree = 'oak';
+    this.wakeLock = null;
+    this.currentPlaylistTab = 'all';
+  }
+
+  async init() {
+    const settings = this.storage.getSettings();
+    this.selectedTechnique = TECHNIQUES.find(t => t.id === settings.breathingPattern) || TECHNIQUES[0];
+    this.selectedDuration = settings.sessionDuration;
+    this.selectedTree = settings.selectedTreeType;
+
+    this.renderTechniques();
+    this.renderDurations();
+    this.renderTreeSelector();
+    this.renderSoundscapes();
+    this.renderForest();
+    this.setupTabs();
+    this.setupBreathing();
+    this.setupMusic();
+    this.setupSettings();
+    this.updateStats();
+
+    // Init music DB
+    try {
+      await this.music.initDB();
+      await this.music.loadTracks();
+      this.renderMusicLibrary();
+    } catch(e) { console.warn('IndexedDB not available:', e); }
+
+    // Apply settings
+    document.getElementById('soundscape-volume').value = settings.soundscapeVolume;
+    document.getElementById('toggle-haptic').classList.toggle('on', settings.hapticFeedback);
+    document.getElementById('toggle-sound-cues').classList.toggle('on', settings.soundCues);
+    document.getElementById('toggle-wake-lock').classList.toggle('on', settings.wakeLock);
+  }
+
+  // Tab Navigation
+  setupTabs() {
+    const btns = document.querySelectorAll('.tab-btn');
+    const pill = document.querySelector('.tab-pill');
+    btns.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+        pill.style.left = `calc(${i * 25}% + 3px)`;
+        pill.style.width = `calc(25% - 6px)`;
+        if (btn.dataset.tab === 'forest') this.renderForest();
+      });
+    });
+  }
+
+  // Render Techniques
+  renderTechniques() {
+    const grid = document.getElementById('technique-grid');
+    grid.innerHTML = TECHNIQUES.map(t => `
+      <div class="technique-card ${t.id === this.selectedTechnique.id ? 'active' : ''}" data-id="${t.id}">
+        <div class="tech-name">${t.name}</div>
+        <div class="tech-timing">${t.timing}</div>
+      </div>
+    `).join('');
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('.technique-card');
+      if (!card || this.sessionActive) return;
+      const t = TECHNIQUES.find(x => x.id === card.dataset.id);
+      if (t) {
+        this.selectedTechnique = t;
+        this.storage.updateSettings({ breathingPattern: t.id });
+        grid.querySelectorAll('.technique-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+      }
+    });
+  }
+
+  // Render Durations
+  renderDurations() {
+    const sel = document.getElementById('duration-selector');
+    sel.innerHTML = DURATIONS.map(d => `
+      <button class="dur-btn ${d === this.selectedDuration ? 'active' : ''}" data-dur="${d}">${d}m</button>
+    `).join('');
+    sel.addEventListener('click', (e) => {
+      const btn = e.target.closest('.dur-btn');
+      if (!btn) return;
+      this.selectedDuration = parseInt(btn.dataset.dur);
+      this.storage.updateSettings({ sessionDuration: this.selectedDuration });
+      sel.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  }
+
+  // Render Tree Selector
+  renderTreeSelector() {
+    const grid = document.getElementById('tree-type-grid');
+    const unlocks = this.storage.getUnlocks();
+    grid.innerHTML = TREE_TYPES.map(t => {
+      const unlocked = unlocks[t.id];
+      return `<div class="tree-type-item ${t.id === this.selectedTree ? 'active' : ''} ${unlocked ? '' : 'locked'}" data-id="${t.id}" title="${t.name}${unlocked ? '' : ' (Locked)'}">
+        ${TreeRenderer.render(t.id, 3)}
+        <span class="tree-type-name">${t.name}</span>
+      </div>`;
+    }).join('');
+    grid.addEventListener('click', (e) => {
+      const item = e.target.closest('.tree-type-item');
+      if (!item || item.classList.contains('locked')) return;
+      this.selectedTree = item.dataset.id;
+      this.storage.updateSettings({ selectedTreeType: this.selectedTree });
+      grid.querySelectorAll('.tree-type-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  }
+
+  // Render Soundscapes
+  renderSoundscapes() {
+    const grid = document.getElementById('soundscape-grid');
+    const settings = this.storage.getSettings();
+    grid.innerHTML = `<div class="soundscape-item ${settings.selectedSoundscape === 'none' ? 'active' : ''}" data-id="none">
+      <div class="ss-name">None</div><div class="ss-desc">Silence</div>
+    </div>` + SOUNDSCAPES.map(s => `
+      <div class="soundscape-item ${s.id === settings.selectedSoundscape ? 'active' : ''}" data-id="${s.id}">
+        <div class="ss-name">${s.name}</div>
+        <div class="ss-desc">${s.desc}</div>
+      </div>
+    `).join('');
+    grid.addEventListener('click', (e) => {
+      const item = e.target.closest('.soundscape-item');
+      if (!item) return;
+      const id = item.dataset.id;
+      this.storage.updateSettings({ selectedSoundscape: id });
+      grid.querySelectorAll('.soundscape-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      if (id === 'none') {
+        this.soundscape.stop();
+      } else {
+        this.soundscape.play(id);
+      }
+    });
+
+    // Volume
+    document.getElementById('soundscape-volume').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      this.soundscape.setVolume(v);
+      this.storage.updateSettings({ soundscapeVolume: v });
+    });
+  }
+
+  // Setup Breathing
+  setupBreathing() {
+    const startBtn = document.getElementById('start-btn');
+    const panel = document.getElementById('breathe-panel');
+    const circle = document.getElementById('breathing-circle');
+
+    startBtn.addEventListener('click', () => {
+      if (this.sessionActive) {
+        this.endSession(false);
+      } else {
+        this.startSession();
+      }
+    });
+
+    // Tap to release for Wim Hof / Buteyko
+    circle.addEventListener('click', () => {
+      if (this.engine) this.engine.tapRelease();
+    });
+  }
+
+  startSession() {
+    this.sessionActive = true;
+    const panel = document.getElementById('breathe-panel');
+    panel.classList.add('active');
+    document.getElementById('start-btn').textContent = 'End Session';
+    document.getElementById('start-btn').style.background = 'rgba(248,113,113,0.2)';
+    document.getElementById('start-btn').style.color = 'var(--danger)';
+    document.getElementById('cycle-count').textContent = '0';
+    document.getElementById('session-timer').textContent = '0:00';
+
+    // Wake lock
+    if (this.storage.getSettings().wakeLock && navigator.wakeLock) {
+      navigator.wakeLock.request('screen').then(wl => this.wakeLock = wl).catch(() => {});
+    }
+
+    // Start soundscape if selected
+    const ss = this.storage.getSettings().selectedSoundscape;
+    if (ss !== 'none') this.soundscape.play(ss);
+
+    // Sound cue
+    if (this.storage.getSettings().soundCues) this.playChime();
+
+    this.engine = new BreathingEngine(
+      (state) => this.onBreathingTick(state),
+      (phase) => this.onPhaseChange(phase),
+      (count) => this.onCycleComplete(count),
+      (elapsed, cycles) => this.onSessionEnd(elapsed, cycles)
+    );
+    this.engine.start(this.selectedTechnique, this.selectedDuration);
+  }
+
+  endSession(completed = false) {
+    if (this.engine) this.engine.stop();
+    this.sessionActive = false;
+    const panel = document.getElementById('breathe-panel');
+    panel.classList.remove('active');
+    document.getElementById('start-btn').textContent = 'Start Session';
+    document.getElementById('start-btn').style.background = '';
+    document.getElementById('start-btn').style.color = '';
+
+    const circle = document.getElementById('breathing-circle');
+    circle.className = 'breathing-circle';
+    circle.style.transform = '';
+    document.getElementById('phase-label').textContent = 'Ready';
+    document.getElementById('phase-timer').textContent = '—';
+    document.getElementById('wim-hof-counter').classList.add('hidden');
+    document.getElementById('retention-tap').classList.add('hidden');
+
+    if (this.wakeLock) { this.wakeLock.release(); this.wakeLock = null; }
+  }
+
+  onBreathingTick(state) {
+    const timerEl = document.getElementById('phase-timer');
+    const circle = document.getElementById('breathing-circle');
+
+    // Update timer display
+    if (state.freeHold) {
+      timerEl.textContent = Math.floor(state.phaseElapsed) + 's';
+    } else {
+      const newVal = state.remaining.toString();
+      if (timerEl.textContent !== newVal) {
+        timerEl.textContent = newVal;
+        timerEl.classList.remove('pulse');
+        void timerEl.offsetWidth;
+        timerEl.classList.add('pulse');
+      }
+    }
+
+    // Animate circle
+    const phase = state.phase;
+    if (phase.type === 'inhale') {
+      const phasePct = phase.duration === Infinity ? 1 : state.phaseElapsed / phase.duration;
+      const scale = 0.6 + phasePct * 0.4;
+      circle.style.transform = `scale(${scale})`;
+    } else if (phase.type === 'exhale') {
+      const phasePct = phase.duration === Infinity ? 0 : state.phaseElapsed / phase.duration;
+      const scale = 1 - phasePct * 0.4;
+      circle.style.transform = `scale(${scale})`;
+    }
+
+    // Session timer
+    const mins = Math.floor(state.sessionElapsed / 60);
+    const secs = Math.floor(state.sessionElapsed % 60);
+    document.getElementById('session-timer').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    // Wim Hof counter
+    if (state.wimHofExtra) {
+      document.getElementById('wim-hof-counter').textContent = state.wimHofExtra;
+      document.getElementById('wim-hof-counter').classList.remove('hidden');
+    }
+
+    // Retention tap hint
+    const retTap = document.getElementById('retention-tap');
+    if (state.freeHold) {
+      retTap.classList.remove('hidden');
+    } else {
+      retTap.classList.add('hidden');
+    }
+
+    // Tree preview
+    const treePreview = document.getElementById('tree-preview');
+    const stage = state.progress < 0.25 ? 0 : state.progress < 0.5 ? 1 : state.progress < 0.8 ? 2 : 3;
+    treePreview.innerHTML = TreeRenderer.render(this.selectedTree, stage, stage === 3);
+  }
+
+  onPhaseChange(phase) {
+    const circle = document.getElementById('breathing-circle');
+    circle.className = 'breathing-circle ' + phase.type;
+    document.getElementById('phase-label').textContent = phase.label;
+
+    // Haptic
+    if (this.storage.getSettings().hapticFeedback && navigator.vibrate) {
+      navigator.vibrate(phase.type === 'inhale' ? 50 : phase.type === 'exhale' ? [30, 30, 30] : 20);
+    }
+
+    // Sound cue
+    if (this.storage.getSettings().soundCues) this.playChime(phase.type);
+  }
+
+  onCycleComplete(count) {
+    document.getElementById('cycle-count').textContent = count;
+  }
+
+  onSessionEnd(elapsed, cycles) {
+    const minutes = Math.round(elapsed / 60 * 10) / 10;
+    const newUnlocks = this.storage.addSession(this.selectedTree, minutes, this.selectedTechnique.id);
+    this.endSession(true);
+    this.showCompletion(minutes, cycles, newUnlocks);
+    this.updateStats();
+    this.renderTreeSelector(); // refresh unlocks
+  }
+
+  showCompletion(minutes, cycles, newUnlocks) {
+    const container = document.getElementById('overlay-container');
+    container.innerHTML = `
+      <div class="completion-overlay" id="completion-overlay">
+        <div class="completion-card">
+          <h2>Session Complete</h2>
+          <div class="tree-display">${TreeRenderer.render(this.selectedTree, 3, true)}</div>
+          <p style="color:var(--text-secondary); font-size: 14px; margin-bottom: 16px">Your ${TREE_TYPES.find(t => t.id === this.selectedTree)?.name || 'tree'} has been planted!</p>
+          <div class="stats-row">
+            <div class="stat"><div class="stat-value">${minutes.toFixed(1)}</div><div class="stat-label">Minutes</div></div>
+            <div class="stat"><div class="stat-value">${cycles}</div><div class="stat-label">Cycles</div></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%; margin-top:20px" onclick="document.getElementById('completion-overlay').remove()">Continue</button>
+        </div>
+      </div>`;
+
+    // Show unlock toasts
+    newUnlocks.forEach((name, i) => {
+      setTimeout(() => this.showToast(`New tree unlocked: ${name}!`), 1000 + i * 2000);
+    });
+  }
+
+  // Forest
+  renderForest() {
+    const stats = this.storage.getStats();
+    document.getElementById('stat-sessions').textContent = stats.totalSessions;
+    document.getElementById('stat-minutes').textContent = Math.round(stats.totalMinutes);
+    document.getElementById('stat-streak').textContent = stats.currentStreak;
+
+    const forest = this.storage.getForest();
+    const container = document.getElementById('forest-grid-container');
+    if (forest.length === 0) {
+      container.innerHTML = `<div class="forest-empty">
+        <p>Your forest is empty</p>
+        <p style="font-size:12px">Complete a breathing session to plant your first tree</p>
+      </div>`;
+      return;
+    }
+    container.innerHTML = `<div class="forest-grid">${forest.map((tree, i) => `
+      <div class="forest-tree ${(i + 1) % 10 === 0 ? 'milestone' : ''}" data-idx="${i}">
+        ${TreeRenderer.render(tree.treeType, 3, false)}
+      </div>
+    `).join('')}</div>`;
+
+    container.addEventListener('click', (e) => {
+      const item = e.target.closest('.forest-tree');
+      if (!item) return;
+      const tree = forest[parseInt(item.dataset.idx)];
+      this.showTreeDetail(tree);
+    });
+  }
+
+  showTreeDetail(tree) {
+    const date = new Date(tree.grownAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const technique = TECHNIQUES.find(t => t.id === tree.breathingPattern)?.name || tree.breathingPattern;
+    const treeName = TREE_TYPES.find(t => t.id === tree.treeType)?.name || tree.treeType;
+    const container = document.getElementById('overlay-container');
+    container.innerHTML = `
+      <div class="tree-modal" id="tree-modal" onclick="if(event.target===this)this.remove()">
+        <div class="tree-modal-content">
+          ${TreeRenderer.render(tree.treeType, 3, true)}
+          <h3 style="margin-bottom:8px">${treeName}</h3>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:4px">${date}</p>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:4px">${tree.sessionMinutes} minutes</p>
+          <p style="font-size:12px; color:var(--text-secondary)">${technique}</p>
+          <button class="btn btn-secondary btn-sm" style="margin-top:16px" onclick="document.getElementById('tree-modal').remove()">Close</button>
+        </div>
+      </div>`;
+  }
+
+  updateStats() {
+    const stats = this.storage.getStats();
+    document.getElementById('stat-sessions').textContent = stats.totalSessions;
+    document.getElementById('stat-minutes').textContent = Math.round(stats.totalMinutes);
+    document.getElementById('stat-streak').textContent = stats.currentStreak;
+  }
+
+
+  // Music Library UI
+  setupMusic() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const playlistTabs = document.getElementById('playlist-tabs');
+
+    // Playlist tabs
+    playlistTabs.innerHTML = `<button class="playlist-tab active" data-pl="all">All</button>` +
+      PLAYLISTS.map(p => `<button class="playlist-tab" data-pl="${p}">${p}</button>`).join('');
+
+    playlistTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.playlist-tab');
+      if (!tab) return;
+      playlistTabs.querySelectorAll('.playlist-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      this.currentPlaylistTab = tab.dataset.pl;
+      this.music.currentPlaylist = this.currentPlaylistTab;
+      this.renderTrackList();
+    });
+
+    // Drop zone
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('audio/'));
+      await this.addFiles(files);
+    });
+    fileInput.addEventListener('change', async (e) => {
+      await this.addFiles(Array.from(e.target.files));
+      fileInput.value = '';
+    });
+
+    // Music controls
+    document.getElementById('music-toggle').addEventListener('click', () => this.music.togglePlay());
+    document.getElementById('music-prev').addEventListener('click', () => this.music.prev());
+    document.getElementById('music-next').addEventListener('click', () => this.music.next());
+    document.getElementById('music-shuffle').addEventListener('click', (e) => {
+      this.music.shuffle = !this.music.shuffle;
+      e.currentTarget.classList.toggle('active', this.music.shuffle);
+    });
+    document.getElementById('music-loop').addEventListener('click', (e) => {
+      this.music.loop = !this.music.loop;
+      e.currentTarget.classList.toggle('active', this.music.loop);
+    });
+
+    this.music.onTrackChange = (track) => {
+      document.getElementById('now-playing').textContent = track.name;
+      this.renderTrackList();
+    };
+    this.music.onStateChange = (playing) => {
+      document.getElementById('music-toggle').textContent = playing ? '⏸' : '▶';
+    };
+
+    // Music volume
+    document.getElementById('music-volume').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      this.music.setVolume(v);
+      this.storage.updateSettings({ musicVolume: v });
+    });
+  }
+
+  async addFiles(files) {
+    const playlist = this.currentPlaylistTab === 'all' ? 'Custom' : this.currentPlaylistTab;
+    for (const file of files) {
+      await this.music.addTrack(file, playlist);
+    }
+    this.renderMusicLibrary();
+    this.showToast(`Added ${files.length} track${files.length > 1 ? 's' : ''}`);
+  }
+
+  renderMusicLibrary() {
+    const hasMusic = this.music.tracks.length > 0;
+    document.getElementById('music-controls').classList.toggle('hidden', !hasMusic);
+    document.getElementById('music-volume-control').style.display = hasMusic ? 'flex' : 'none';
+    this.renderTrackList();
+  }
+
+  renderTrackList() {
+    const list = document.getElementById('track-list');
+    const filtered = this.music.getFilteredTracks();
+    if (filtered.length === 0) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = filtered.map((track, i) => {
+      const playing = this.music.currentIdx === i && this.music.playing;
+      return `<div class="track-item ${playing ? 'playing' : ''}">
+        <button class="track-play-btn" data-idx="${i}">${playing ? '⏸' : '▶'}</button>
+        <div class="track-info">
+          <div class="track-name">${track.name}</div>
+          <div class="track-playlist">${track.playlist}</div>
+        </div>
+        <button class="track-delete" data-id="${track.id}">✕</button>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.track-play-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        if (this.music.currentIdx === idx && this.music.playing) {
+          this.music.togglePlay();
+        } else {
+          this.music.play(idx);
+        }
+      });
+    });
+
+    list.querySelectorAll('.track-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await this.music.deleteTrack(parseInt(btn.dataset.id));
+        this.renderMusicLibrary();
+      });
+    });
+  }
+
+  // Settings
+  setupSettings() {
+    // Toggles
+    ['haptic', 'sound-cues', 'wake-lock'].forEach(id => {
+      const el = document.getElementById(`toggle-${id}`);
+      const key = id === 'haptic' ? 'hapticFeedback' : id === 'sound-cues' ? 'soundCues' : 'wakeLock';
+      el.addEventListener('click', () => {
+        el.classList.toggle('on');
+        this.storage.updateSettings({ [key]: el.classList.contains('on') });
+      });
+    });
+
+    // Export
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const data = this.storage.exportData();
+      const blob = new Blob([data], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'breathe-data.json';
+      a.click();
+      this.showToast('Data exported');
+    });
+
+    // Reset
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      if (confirm('Reset all data? This cannot be undone.')) {
+        this.storage.resetAll();
+        this.renderForest();
+        this.renderTreeSelector();
+        this.updateStats();
+        this.showToast('All data reset');
+      }
+    });
+  }
+
+  // Sound cue chime
+  playChime(type = 'inhale') {
+    this.soundscape.init();
+    const ctx = this.soundscape.ctx;
+    const freq = type === 'inhale' ? 660 : type === 'exhale' ? 440 : 550;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0.08, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.start(t);
+    o.stop(t + 0.4);
+  }
+
+  // Toast
+  showToast(msg, icon = '✓') {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<span class="toast-icon">${icon}</span>${msg}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new App();
+  app.init();
+});
+</script>
+</body>
+</html>
