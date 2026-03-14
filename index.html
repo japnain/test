@@ -94,14 +94,53 @@ body::before {
 /* ===== BREATHE TAB ===== */
 .breathe-panel { display: flex; flex-direction: column; align-items: center; padding-top: 8px; }
 
-/* Technique Selector */
-.technique-selector { width: 100%; margin-bottom: 16px; }
-.technique-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.technique-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; cursor: pointer; transition: all var(--transition); }
-.technique-card:hover { background: var(--surface-hover); }
-.technique-card.active { border-color: var(--primary); background: rgba(212,145,94,0.1); }
-.technique-card .tech-name { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
-.technique-card .tech-timing { font-size: 10px; color: var(--text-secondary); }
+/* Technique Selector — Chest Dropdown */
+.technique-selector { width: 100%; margin-bottom: 16px; position: relative; }
+.technique-chest {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 18px; cursor: pointer; transition: all var(--transition);
+  display: flex; align-items: center; gap: 12px; position: relative;
+}
+.technique-chest:hover { background: var(--surface-hover); }
+.technique-chest.open { border-color: var(--primary); border-radius: var(--radius) var(--radius) 0 0; }
+.chest-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(212,145,94,0.2), rgba(168,198,134,0.15));
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.chest-info { flex: 1; min-width: 0; }
+.chest-name { font-size: 14px; font-weight: 600; }
+.chest-timing { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.chest-arrow { color: var(--text-secondary); transition: transform var(--transition); font-size: 12px; }
+.technique-chest.open .chest-arrow { transform: rotate(180deg); }
+
+.technique-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--bg); border: 1px solid var(--primary); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  max-height: 380px; overflow-y: auto; display: none;
+  scrollbar-width: thin; scrollbar-color: rgba(255,235,205,0.1) transparent;
+}
+.technique-dropdown.open { display: block; animation: slideDown 0.25s ease; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+.technique-category { padding: 10px 14px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-tertiary); }
+.technique-dropdown .technique-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; cursor: pointer; transition: all var(--transition);
+  border-bottom: 1px solid var(--border);
+}
+.technique-dropdown .technique-card:last-child { border-bottom: none; }
+.technique-dropdown .technique-card:hover { background: var(--surface-hover); }
+.technique-dropdown .technique-card.active { background: rgba(212,145,94,0.1); }
+.technique-dropdown .tech-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.technique-dropdown .tech-info { flex: 1; min-width: 0; }
+.technique-dropdown .tech-name { font-size: 12px; font-weight: 600; }
+.technique-dropdown .tech-desc { font-size: 10px; color: var(--text-secondary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.technique-dropdown .tech-timing { font-size: 10px; color: var(--primary); font-family: var(--mono); flex-shrink: 0; }
 
 /* Breathing Circle */
 .circle-container { position: relative; width: 220px; height: 220px; margin: 20px 0; }
@@ -271,7 +310,6 @@ body::before {
 
 /* Responsive */
 @media (max-width: 380px) {
-  .technique-grid { grid-template-columns: 1fr 1fr; }
   .forest-grid { grid-template-columns: repeat(4, 1fr); }
   .soundscape-grid { grid-template-columns: 1fr; }
 }
@@ -332,8 +370,16 @@ body::before {
     <!-- BREATHE PANEL -->
     <div class="tab-panel active" id="panel-breathe">
       <div class="breathe-panel" id="breathe-panel">
-        <div class="technique-selector">
-          <div class="technique-grid" id="technique-grid"></div>
+        <div class="technique-selector" id="technique-selector">
+          <div class="technique-chest" id="technique-chest">
+            <div class="chest-icon" id="chest-icon">🫁</div>
+            <div class="chest-info">
+              <div class="chest-name" id="chest-name">Box Breathing</div>
+              <div class="chest-timing" id="chest-timing">4-4-4-4</div>
+            </div>
+            <div class="chest-arrow">▼</div>
+          </div>
+          <div class="technique-dropdown" id="technique-dropdown"></div>
         </div>
 
         <div class="tree-selector card" id="tree-selector-card">
@@ -348,7 +394,7 @@ body::before {
             <div class="phase-label" id="phase-label">Ready</div>
             <div class="phase-timer" id="phase-timer">—</div>
             <div class="wim-hof-counter hidden" id="wim-hof-counter"></div>
-            <div class="retention-tap hidden" id="retention-tap">Tap when ready</div>
+            <div class="retention-tap hidden" id="retention-tap">Tap to release early</div>
           </div>
         </div>
 
@@ -467,27 +513,50 @@ body::before {
 <script>
 // ===== CONSTANTS & CONFIG =====
 const TECHNIQUES = [
-  { id: 'box', name: 'Box Breathing', timing: '4-4-4-4', phases: [
+  // Calm & Relaxation
+  { id: 'box', name: 'Box Breathing', timing: '4-4-4-4', category: 'calm', desc: 'Equal inhale, hold, exhale, hold. Navy SEAL stress relief.', phases: [
     { label: 'Inhale', duration: 4, type: 'inhale' },
     { label: 'Hold', duration: 4, type: 'hold' },
     { label: 'Exhale', duration: 4, type: 'exhale' },
     { label: 'Hold', duration: 4, type: 'hold' }
   ]},
-  { id: '478', name: '4-7-8', timing: '4-7-8', phases: [
+  { id: '478', name: '4-7-8 Relaxing', timing: '4-7-8', category: 'calm', desc: 'Dr. Weil\'s natural tranquilizer for the nervous system.', phases: [
     { label: 'Inhale', duration: 4, type: 'inhale' },
     { label: 'Hold', duration: 7, type: 'hold' },
     { label: 'Exhale', duration: 8, type: 'exhale' }
   ]},
-  { id: 'wimhof', name: 'Wim Hof', timing: 'Power', special: 'wimhof', phases: [] },
-  { id: 'pursed', name: 'Pursed Lip', timing: '2-4', phases: [
-    { label: 'Inhale', duration: 2, type: 'inhale' },
-    { label: 'Exhale', duration: 4, type: 'exhale' }
+  { id: 'resonant', name: 'Resonant', timing: '5.5-5.5', category: 'calm', desc: 'Coherent breathing at 5.5 breaths/min for heart-brain sync.', phases: [
+    { label: 'Inhale', duration: 5.5, type: 'inhale' },
+    { label: 'Exhale', duration: 5.5, type: 'exhale' }
   ]},
-  { id: 'diaphragm', name: 'Diaphragmatic', timing: '4-6', phases: [
+  { id: 'moonbreath', name: 'Moon Breath', timing: '4-8', category: 'calm', desc: 'Left nostril only. Activates parasympathetic calm.', phases: [
+    { label: 'Left In', duration: 4, type: 'inhale' },
+    { label: 'Left Out', duration: 8, type: 'exhale' }
+  ]},
+  { id: '2to1', name: '2:1 Ratio', timing: '4-8', category: 'calm', desc: 'Exhale twice as long as inhale for deep relaxation.', phases: [
     { label: 'Inhale', duration: 4, type: 'inhale' },
-    { label: 'Exhale', duration: 6, type: 'exhale' }
+    { label: 'Exhale', duration: 8, type: 'exhale' }
   ]},
-  { id: 'nadi', name: 'Nadi Shodhana', timing: 'Alternate', phases: [
+  // Focus & Energy
+  { id: 'wimhof', name: 'Wim Hof', timing: 'Power', category: 'energy', special: 'wimhof', desc: '30 power breaths, 60s retention, 15s recovery. Ice man method.', phases: [] },
+  { id: 'kapalabhati', name: 'Kapalabhati', timing: '0.5-0.5', category: 'energy', desc: 'Skull-shining breath. Quick exhales, passive inhales.', phases: [
+    { label: 'Exhale', duration: 0.5, type: 'exhale' },
+    { label: 'Inhale', duration: 0.5, type: 'inhale' }
+  ]},
+  { id: 'lion', name: "Lion's Breath", timing: '4-2', category: 'energy', desc: 'Deep inhale, forceful exhale with tongue out. Release tension.', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Roar!', duration: 2, type: 'exhale' }
+  ]},
+  { id: 'bhastrika', name: 'Bellows Breath', timing: '1-1', category: 'energy', desc: 'Forceful equal inhales and exhales. Energizing pranayama.', phases: [
+    { label: 'Inhale', duration: 1, type: 'inhale' },
+    { label: 'Exhale', duration: 1, type: 'exhale' }
+  ]},
+  { id: 'sunbreath', name: 'Sun Breath', timing: '4-4', category: 'energy', desc: 'Right nostril only. Activates sympathetic energy.', phases: [
+    { label: 'Right In', duration: 4, type: 'inhale' },
+    { label: 'Right Out', duration: 4, type: 'exhale' }
+  ]},
+  // Balance & Wellness
+  { id: 'nadi', name: 'Nadi Shodhana', timing: 'Alternate', category: 'balance', desc: 'Alternate nostril breathing. Balances left & right brain.', phases: [
     { label: 'Left In', duration: 4, type: 'inhale' },
     { label: 'Hold', duration: 4, type: 'hold' },
     { label: 'Right Out', duration: 4, type: 'exhale' },
@@ -495,15 +564,40 @@ const TECHNIQUES = [
     { label: 'Hold', duration: 4, type: 'hold' },
     { label: 'Left Out', duration: 4, type: 'exhale' }
   ]},
-  { id: 'resonant', name: 'Resonant', timing: '5-5', phases: [
+  { id: 'diaphragm', name: 'Diaphragmatic', timing: '4-6', category: 'balance', desc: 'Belly breathing. Strengthens the diaphragm muscle.', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Exhale', duration: 6, type: 'exhale' }
+  ]},
+  { id: 'pursed', name: 'Pursed Lip', timing: '2-4', category: 'balance', desc: 'Slow exhale through pursed lips. Improves lung function.', phases: [
+    { label: 'Inhale', duration: 2, type: 'inhale' },
+    { label: 'Exhale', duration: 4, type: 'exhale' }
+  ]},
+  { id: 'buteyko', name: 'Buteyko', timing: 'Hold', category: 'balance', special: 'buteyko', desc: 'Gentle breathing + controlled pauses. Improves CO2 tolerance.', phases: [] },
+  { id: 'triangle', name: 'Triangle', timing: '4-4-4', category: 'balance', desc: 'Inhale, hold, exhale in equal parts. Simple and grounding.', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 4, type: 'hold' },
+    { label: 'Exhale', duration: 4, type: 'exhale' }
+  ]},
+  { id: 'ocean', name: 'Ujjayi Ocean', timing: '5-5', category: 'balance', desc: 'Constricted throat creates ocean sound. Yoga breathing.', phases: [
     { label: 'Inhale', duration: 5, type: 'inhale' },
     { label: 'Exhale', duration: 5, type: 'exhale' }
   ]},
-  { id: 'lion', name: "Lion's Breath", timing: '4-2', phases: [
+  // Sleep
+  { id: 'military', name: 'Military Sleep', timing: '4-7-8', category: 'sleep', desc: 'Used by soldiers to fall asleep in 2 minutes.', phases: [
     { label: 'Inhale', duration: 4, type: 'inhale' },
-    { label: 'Roar!', duration: 2, type: 'exhale' }
+    { label: 'Hold', duration: 7, type: 'hold' },
+    { label: 'Exhale', duration: 8, type: 'exhale' }
   ]},
-  { id: 'buteyko', name: 'Buteyko', timing: 'Hold', special: 'buteyko', phases: [] }
+  { id: 'sleepgate', name: 'Sleep Gate', timing: '4-4-6-2', category: 'sleep', desc: 'Long exhale with brief pause. Lulls you to sleep.', phases: [
+    { label: 'Inhale', duration: 4, type: 'inhale' },
+    { label: 'Hold', duration: 4, type: 'hold' },
+    { label: 'Exhale', duration: 6, type: 'exhale' },
+    { label: 'Hold', duration: 2, type: 'hold' }
+  ]},
+  { id: 'bodyscan', name: 'Body Scan', timing: '6-6', category: 'sleep', desc: 'Slow deep breaths. Focus attention from toes to head.', phases: [
+    { label: 'Inhale', duration: 6, type: 'inhale' },
+    { label: 'Exhale', duration: 6, type: 'exhale' }
+  ]}
 ];
 
 const TREE_TYPES = [
@@ -541,6 +635,9 @@ const SOUNDSCAPES = [
   { id: 'chimes', name: 'Wind Chimes', desc: 'Pentatonic metallic tones', category: 'nature' },
   { id: 'night', name: 'Night Garden', desc: 'Crickets, owls, gentle breeze', category: 'nature' },
   { id: 'stream', name: 'Mountain Stream', desc: 'Flowing water and birds', category: 'nature' },
+  { id: 'campfire', name: 'Campfire', desc: 'Crackling flames and warm embers', category: 'nature' },
+  { id: 'cave', name: 'Crystal Cave', desc: 'Dripping water and resonant echoes', category: 'nature' },
+  { id: 'sakura', name: 'Sakura Wind', desc: 'Cherry blossom breeze and koto', category: 'nature' },
   { id: 'organ', name: 'Interstellar Organ', desc: 'Zimmer-style swelling pads', category: 'cinematic' },
   { id: 'time', name: 'Time (Piano)', desc: 'Generative piano arpeggios', category: 'cinematic' },
   { id: 'strings', name: 'Epic Strings', desc: 'Sweeping string ensemble', category: 'cinematic' },
@@ -548,7 +645,9 @@ const SOUNDSCAPES = [
   { id: 'serenade', name: 'Moonlit Serenade', desc: 'Soft flute over pad chords', category: 'cinematic' },
   { id: 'adagio', name: 'Classical Adagio', desc: 'Rich harmonic progressions', category: 'cinematic' },
   { id: 'tension', name: 'Cinematic Tension', desc: 'Building suspense layers', category: 'cinematic' },
-  { id: 'choir', name: 'Ethereal Choir', desc: 'Cathedral choir pads', category: 'cinematic' }
+  { id: 'choir', name: 'Ethereal Choir', desc: 'Cathedral choir pads', category: 'cinematic' },
+  { id: 'lullaby', name: 'Gentle Lullaby', desc: 'Soft music box cradle song', category: 'cinematic' },
+  { id: 'aurora', name: 'Aurora Borealis', desc: 'Shimmering arctic light pads', category: 'cinematic' }
 ];
 
 const PLAYLISTS = ['Studio Ghibli', 'Hans Zimmer', 'Nolan Films', 'Meditation & Zen', 'Lo-fi & Ambient', 'Custom'];
@@ -758,7 +857,12 @@ class BreathingEngine {
         this.emitPhaseChange();
       }
     } else if (this.wimHofStage === 'retention') {
-      // Free hold — user taps to end
+      // Auto-progress after 60s (or tap to release early)
+      if (this.phaseElapsed >= 60) {
+        this.wimHofStage = 'recovery';
+        this.phaseElapsed = 0;
+        this.emitPhaseChange();
+      }
     } else if (this.wimHofStage === 'recovery') {
       if (this.phaseElapsed >= 15) {
         this.wimHofStage = 'power';
@@ -781,7 +885,12 @@ class BreathingEngine {
         this.emitPhaseChange();
       }
     } else if (this.buteykoStage === 'hold') {
-      // Free hold — user taps to end
+      // Auto-progress after 30s (or tap to release early)
+      if (this.phaseElapsed >= 30) {
+        this.buteykoStage = 'exhale';
+        this.phaseElapsed = 0;
+        this.emitPhaseChange();
+      }
     } else if (this.buteykoStage === 'exhale') {
       if (this.phaseElapsed >= 4) {
         this.buteykoStage = 'breathe';
@@ -814,13 +923,13 @@ class BreathingEngine {
       if (this.wimHofStage === 'power') {
         return { label: this.phaseIndex % 2 === 0 ? 'Inhale' : 'Exhale', type: this.phaseIndex % 2 === 0 ? 'inhale' : 'exhale', duration: this.wimHofBreathCount < 15 ? 2 : 1.5, extra: `${this.wimHofBreathCount}/30` };
       } else if (this.wimHofStage === 'retention') {
-        return { label: 'Hold', type: 'hold', duration: Infinity, freeHold: true };
+        return { label: 'Hold', type: 'hold', duration: 60, freeHold: true };
       } else {
         return { label: 'Recovery', type: 'inhale', duration: 15 };
       }
     } else if (this.technique.special === 'buteyko') {
       if (this.buteykoStage === 'breathe') return { label: 'Breathe', type: 'inhale', duration: 3 };
-      if (this.buteykoStage === 'hold') return { label: 'Hold', type: 'hold', duration: Infinity, freeHold: true };
+      if (this.buteykoStage === 'hold') return { label: 'Hold', type: 'hold', duration: 30, freeHold: true };
       return { label: 'Exhale', type: 'exhale', duration: 4 };
     }
     return this.technique.phases[this.phaseIndex];
@@ -828,12 +937,7 @@ class BreathingEngine {
 
   getState(progress) {
     const phase = this.getCurrentPhase();
-    let remaining;
-    if (phase.freeHold) {
-      remaining = Math.floor(this.phaseElapsed);
-    } else {
-      remaining = Math.max(0, Math.ceil(phase.duration - this.phaseElapsed));
-    }
+    const remaining = Math.max(0, Math.ceil(phase.duration - this.phaseElapsed));
     return {
       phase, remaining, phaseElapsed: this.phaseElapsed,
       cycleCount: this.cycleCount, sessionElapsed: this.sessionElapsed,
@@ -2110,6 +2214,241 @@ class SoundscapeEngine {
     };
     playChoir();
   }
+
+  // 17. Campfire
+  _campfire() {
+    // Brown noise base for fire rumble
+    const n = this.noise('brown');
+    const lp = this.filter('lowpass', 600, 0.5);
+    const g = this.gain(0.3);
+    n.connect(lp); lp.connect(g); g.connect(this.masterGain);
+    n.start();
+
+    // Crackling pops
+    const crackle = () => {
+      if (this.active !== 'campfire') return;
+      const count = 1 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < count; i++) {
+        const delay = Math.random() * 300;
+        this.timeouts.push(setTimeout(() => {
+          if (this.active !== 'campfire') return;
+          const pop = this.noise('white');
+          const hp = this.filter('highpass', 2000 + Math.random() * 3000);
+          const pg = this.gain(0);
+          pop.connect(hp); hp.connect(pg); pg.connect(this.masterGain);
+          const t = this.ctx.currentTime;
+          pg.gain.setValueAtTime(0.08 + Math.random() * 0.06, t);
+          pg.gain.exponentialRampToValueAtTime(0.001, t + 0.03 + Math.random() * 0.04);
+          pop.start(t); pop.stop(t + 0.1);
+        }, delay));
+      }
+      this.timeouts.push(setTimeout(crackle, 200 + Math.random() * 600));
+    };
+    crackle();
+
+    // Warm flicker — gain modulation
+    const flicker = () => {
+      if (this.active !== 'campfire') return;
+      const t = this.ctx.currentTime;
+      const v = 0.2 + Math.random() * 0.15;
+      g.gain.setTargetAtTime(v, t, 0.3);
+      this.timeouts.push(setTimeout(flicker, 500 + Math.random() * 1500));
+    };
+    flicker();
+  }
+
+  // 18. Crystal Cave
+  _cave() {
+    // Deep reverberant drone
+    const drone = this.osc('sine', 65);
+    const dg = this.gain(0.08);
+    drone.connect(dg); dg.connect(this.masterGain);
+    drone.start();
+
+    // Water drips
+    const drip = () => {
+      if (this.active !== 'cave') return;
+      const freq = 1800 + Math.random() * 2200;
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.exponentialRampToValueAtTime(freq * 0.4, t + 0.15);
+      g.gain.setValueAtTime(0.04, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.35);
+      // Echo of drip
+      this.timeouts.push(setTimeout(() => {
+        if (this.active !== 'cave') return;
+        const e = this.osc('sine', freq * 0.5);
+        const eg = this.gain(0);
+        e.connect(eg); eg.connect(this.masterGain);
+        const t2 = this.ctx.currentTime;
+        eg.gain.setValueAtTime(0.015, t2);
+        eg.gain.exponentialRampToValueAtTime(0.001, t2 + 0.4);
+        e.start(t2); e.stop(t2 + 0.45);
+      }, 200 + Math.random() * 100));
+      this.timeouts.push(setTimeout(drip, 2000 + Math.random() * 5000));
+    };
+    drip();
+
+    // Resonant overtones that swell and fade
+    const resonate = () => {
+      if (this.active !== 'cave') return;
+      const freqs = [130, 195, 260, 390, 520];
+      const freq = freqs[Math.floor(Math.random() * freqs.length)];
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.03, t + 4);
+      g.gain.linearRampToValueAtTime(0, t + 10);
+      o.start(t); o.stop(t + 10.5);
+      this.timeouts.push(setTimeout(resonate, 8000 + Math.random() * 6000));
+    };
+    resonate();
+  }
+
+  // 19. Sakura Wind
+  _sakura() {
+    // Pink noise wind
+    const wind = this.noise('pink');
+    const wf = this.filter('lowpass', 500);
+    const wg = this.gain(0.12);
+    wind.connect(wf); wf.connect(wg); wg.connect(this.masterGain);
+    wind.start();
+
+    // Pentatonic koto plucks — Japanese scale
+    const scale = [261.6, 293.7, 349.2, 392, 523.3]; // C D F G C'
+    const pluck = () => {
+      if (this.active !== 'sakura') return;
+      const notes = [1, 2, 3].map(() => scale[Math.floor(Math.random() * scale.length)]);
+      notes.forEach((freq, i) => {
+        this.timeouts.push(setTimeout(() => {
+          if (this.active !== 'sakura') return;
+          // Koto-like: triangle wave with fast attack, medium decay
+          const o = this.osc('triangle', freq);
+          const o2 = this.osc('sine', freq * 2.01); // slight inharmonic
+          const g = this.gain(0);
+          o.connect(g); o2.connect(g); g.connect(this.masterGain);
+          const t = this.ctx.currentTime;
+          g.gain.setValueAtTime(0.05, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 1.5 + Math.random());
+          o.start(t); o2.start(t);
+          o.stop(t + 2.5); o2.stop(t + 2.5);
+        }, i * (300 + Math.random() * 200)));
+      });
+      this.timeouts.push(setTimeout(pluck, 3000 + Math.random() * 5000));
+    };
+    pluck();
+
+    // Wind swells
+    const swell = () => {
+      if (this.active !== 'sakura') return;
+      const t = this.ctx.currentTime;
+      wg.gain.setTargetAtTime(0.08 + Math.random() * 0.1, t, 1.5);
+      this.timeouts.push(setTimeout(swell, 3000 + Math.random() * 4000));
+    };
+    swell();
+  }
+
+  // 20. Gentle Lullaby
+  _lullaby() {
+    // Music box mechanism
+    const melody = [
+      523.25, 587.33, 659.25, 587.33, 523.25, 440, 392,
+      440, 523.25, 587.33, 523.25, 440, 392, 349.23,
+      392, 440, 523.25, 659.25, 587.33, 523.25, 440,
+      523.25, 587.33, 523.25, 440, 392, 349.23, 392
+    ];
+    let noteIdx = 0;
+
+    const playNote = () => {
+      if (this.active !== 'lullaby') return;
+      const freq = melody[noteIdx % melody.length];
+      // Music box: sine + high harmonic for metallic ring
+      const o = this.osc('sine', freq);
+      const o2 = this.osc('sine', freq * 3.01);
+      const o3 = this.osc('sine', freq * 5.02);
+      const g = this.gain(0);
+      o.connect(g); o2.connect(g); o3.connect(g);
+      g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+      o.start(t); o2.start(t); o3.start(t);
+      o.stop(t + 2); o2.stop(t + 2); o3.stop(t + 2);
+      noteIdx++;
+      // Gentle waltz tempo — dotted rhythm
+      const dur = noteIdx % 3 === 0 ? 800 : 500;
+      this.timeouts.push(setTimeout(playNote, dur));
+    };
+    playNote();
+
+    // Soft pad underneath
+    const pad = this.osc('sine', 196); // G3
+    const pad2 = this.osc('sine', 261.6); // C4
+    const pg = this.gain(0.02);
+    pad.connect(pg); pad2.connect(pg); pg.connect(this.masterGain);
+    pad.start(); pad2.start();
+  }
+
+  // 21. Aurora Borealis
+  _aurora() {
+    // Shimmering high-register pads
+    const shimmerFreqs = [880, 1108.7, 1318.5, 1760]; // A5 C#6 E6 A6
+    shimmerFreqs.forEach((freq, i) => {
+      const o = this.osc('sine', freq);
+      const lfo = this.osc('sine', 0.1 + i * 0.05);
+      const lfoG = this.gain(freq * 0.01);
+      lfo.connect(lfoG); lfoG.connect(o.frequency);
+      const g = this.gain(0.015);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(); lfo.start();
+    });
+
+    // Deep warm drone
+    const drone = this.osc('sine', 110);
+    const dg = this.gain(0.06);
+    drone.connect(dg); dg.connect(this.masterGain);
+    drone.start();
+
+    // Sweeping light waves
+    const sweep = () => {
+      if (this.active !== 'aurora') return;
+      const freq = 220 + Math.random() * 440;
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      const dur = 6 + Math.random() * 8;
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.linearRampToValueAtTime(freq * (1.2 + Math.random() * 0.5), t + dur);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.02, t + dur * 0.3);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      o.start(t); o.stop(t + dur + 0.5);
+      this.timeouts.push(setTimeout(sweep, 4000 + Math.random() * 6000));
+    };
+    sweep();
+
+    // Sparkle particles
+    const sparkle = () => {
+      if (this.active !== 'aurora') return;
+      const freq = 2000 + Math.random() * 3000;
+      const o = this.osc('sine', freq);
+      const g = this.gain(0);
+      o.connect(g); g.connect(this.masterGain);
+      const t = this.ctx.currentTime;
+      g.gain.setValueAtTime(0.012, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.35);
+      this.timeouts.push(setTimeout(sparkle, 500 + Math.random() * 2000));
+    };
+    sparkle();
+  }
 }
 
 
@@ -2290,14 +2629,13 @@ class VoiceGuide {
     this.synth = window.speechSynthesis || null;
     this.voice = null;
     this.voiceReady = false;
-    this.rate = 0.82;
-    this.pitch = 1.05;
-    this.volume = 0.7;
+    this.rate = 0.78;
+    this.pitch = 1.1;
+    this.volume = 0.6;
     this.lastSpoken = '';
     this.lastSpokenTime = 0;
     this.speakTimeout = null;
     this.audioCtx = null;
-    // Listen for voices to load (Chrome loads async)
     if (this.synth) {
       this.synth.addEventListener('voiceschanged', () => this.initVoice());
       this.initVoice();
@@ -2308,54 +2646,52 @@ class VoiceGuide {
     if (!this.synth) return;
     const voices = this.synth.getVoices();
     if (voices.length === 0) return;
-    // Prefer known high-quality female voices
-    const preferred = [
-      'Google UK English Female', 'Samantha', 'Karen',
-      'Moira', 'Fiona', 'Victoria', 'Zira', 'Google US English'
-    ];
-    for (const name of preferred) {
+    // Tier 1: Known premium female voices
+    const tier1 = ['Google UK English Female', 'Samantha', 'Karen', 'Moira', 'Fiona', 'Tessa'];
+    for (const name of tier1) {
       const v = voices.find(v => v.name.includes(name));
       if (v) { this.voice = v; this.voiceReady = true; return; }
     }
-    // Any English voice that isn't obviously male
+    // Tier 2: Any English female voice
     const female = voices.find(v =>
       v.lang.startsWith('en') &&
-      !/(Male|David|Daniel|James|George|Fred|Tom|Alex$)/i.test(v.name)
+      !/(Male|David|Daniel|James|George|Fred|Tom|Alex$|Aaron|Albert)/i.test(v.name)
     );
     if (female) { this.voice = female; this.voiceReady = true; return; }
-    // Any English voice
     const english = voices.find(v => v.lang.startsWith('en'));
     if (english) { this.voice = english; }
     this.voiceReady = true;
   }
 
   setEnabled(on) { this.enabled = on; }
-
   setAudioContext(ctx) { this.audioCtx = ctx; }
 
   speak(text, priority = 'high') {
-    if (!this.enabled || !this.synth) return;
-    if (priority === 'low' && this.synth.speaking) return;
+    if (!this.enabled) return;
     const now = Date.now();
     if (text === this.lastSpoken && now - this.lastSpokenTime < 1200) return;
-    if (!this.voiceReady) this.initVoice();
-    this.synth.cancel();
     if (this.speakTimeout) clearTimeout(this.speakTimeout);
+    this.lastSpoken = text;
+    this.lastSpokenTime = now;
 
-    // Play ambient overlay tone, then speak with slight delay
-    const overlayType = this.getOverlayType(text);
-    this.playOverlay(overlayType);
+    // Always play the musical cue
+    const cueType = this.getCueType(text);
+    this.playCue(cueType);
 
-    this.speakTimeout = setTimeout(() => {
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.rate = this.rate;
-      utt.pitch = this.pitch;
-      utt.volume = this.volume;
-      if (this.voice) utt.voice = this.voice;
-      this.lastSpoken = text;
-      this.lastSpokenTime = now;
-      this.synth.speak(utt);
-    }, 50);
+    // Also speak with TTS if available (layered under the musical cue)
+    if (this.synth) {
+      if (priority === 'low' && this.synth.speaking) return;
+      if (!this.voiceReady) this.initVoice();
+      this.synth.cancel();
+      this.speakTimeout = setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.rate = this.rate;
+        utt.pitch = this.pitch;
+        utt.volume = this.volume;
+        if (this.voice) utt.voice = this.voice;
+        this.synth.speak(utt);
+      }, 80);
+    }
   }
 
   stop() {
@@ -2364,76 +2700,131 @@ class VoiceGuide {
     this.lastSpoken = '';
   }
 
-  isSupported() {
-    return 'speechSynthesis' in window;
-  }
+  isSupported() { return true; } // Musical cues always work
 
-  getOverlayType(text) {
-    if (/breathe in|left nostril.*in|right nostril.*in/i.test(text)) return 'inhale';
-    if (/breathe out|left nostril.*out|right nostril.*out/i.test(text)) return 'exhale';
+  getCueType(text) {
+    if (/breathe in|nostril.*in|inhale/i.test(text)) return 'inhale';
+    if (/breathe out|nostril.*out|exhale/i.test(text)) return 'exhale';
     if (/^hold/i.test(text)) return 'hold';
     if (/^[1-3]$/.test(text)) return 'tick';
-    if (/begin|session complete/i.test(text)) return 'bowl';
+    if (/begin/i.test(text)) return 'begin';
+    if (/complete|well done/i.test(text)) return 'complete';
+    if (/roar/i.test(text)) return 'exhale';
+    if (/recovery|breathe$/i.test(text)) return 'inhale';
     return 'inhale';
   }
 
-  playOverlay(type) {
+  // Beautiful musical cue system — ethereal harp/bell tones
+  playCue(type) {
     if (!this.audioCtx) return;
     const ctx = this.audioCtx;
     const t = ctx.currentTime;
 
-    if (type === 'inhale' || type === 'exhale') {
-      // Gentle sine sweep — rising for inhale, falling for exhale
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      const startF = type === 'inhale' ? 396 : 528;
-      const endF = type === 'inhale' ? 528 : 396;
-      o.frequency.setValueAtTime(startF, t);
-      o.frequency.linearRampToValueAtTime(endF, t + 0.8);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.06, t + 0.1);
-      g.gain.setValueAtTime(0.06, t + 0.5);
-      g.gain.linearRampToValueAtTime(0, t + 0.8);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + 0.85);
+    if (type === 'inhale') {
+      // Ascending ethereal arpeggio — like a gentle harp glissando
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        // Slight detune for shimmer
+        const o2 = ctx.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(freq * 1.002, t);
+        const start = t + i * 0.12;
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.045, start + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
+        o.connect(g); o2.connect(g); g.connect(ctx.destination);
+        o.start(start); o2.start(start);
+        o.stop(start + 0.65); o2.stop(start + 0.65);
+      });
+    } else if (type === 'exhale') {
+      // Descending gentle arpeggio
+      const notes = [1046.5, 783.99, 659.25, 523.25]; // C6 G5 E5 C5
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        const o2 = ctx.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(freq * 0.998, t);
+        const start = t + i * 0.12;
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.04, start + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
+        o.connect(g); o2.connect(g); g.connect(ctx.destination);
+        o.start(start); o2.start(start);
+        o.stop(start + 0.75); o2.stop(start + 0.75);
+      });
     } else if (type === 'hold') {
-      // Sustained tone at 432 Hz with gentle vibrato
-      const o = ctx.createOscillator();
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
-      const g = ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(432, t);
-      lfo.type = 'sine'; lfo.frequency.setValueAtTime(4, t);
-      lfoGain.gain.setValueAtTime(3, t);
-      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.05, t + 0.15);
-      g.gain.setValueAtTime(0.05, t + 0.7);
-      g.gain.linearRampToValueAtTime(0, t + 1.0);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); lfo.start(t);
-      o.stop(t + 1.05); lfo.stop(t + 1.05);
+      // Warm sustained chord with gentle vibrato — like a held breath
+      const chord = [349.23, 440, 523.25]; // F4 A4 C5
+      chord.forEach((freq) => {
+        const o = ctx.createOscillator();
+        const lfo = ctx.createOscillator();
+        const lfoG = ctx.createGain();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        lfo.type = 'sine'; lfo.frequency.setValueAtTime(3.5, t);
+        lfoG.gain.setValueAtTime(2, t);
+        lfo.connect(lfoG); lfoG.connect(o.frequency);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.035, t + 0.2);
+        g.gain.setValueAtTime(0.035, t + 0.8);
+        g.gain.linearRampToValueAtTime(0, t + 1.2);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); lfo.start(t);
+        o.stop(t + 1.25); lfo.stop(t + 1.25);
+      });
     } else if (type === 'tick') {
-      // Soft crystalline ping
+      // Delicate wind chime ping
       const o = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
       const g = ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(880, t);
-      g.gain.setValueAtTime(0.03, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + 0.2);
-    } else if (type === 'bowl') {
-      // Singing bowl — layered harmonics with slow decay
-      [256, 512, 768].forEach((freq, i) => {
+      o.type = 'sine'; o.frequency.setValueAtTime(1175, t); // D6
+      o2.type = 'sine'; o2.frequency.setValueAtTime(1760, t); // A6 harmonic
+      g.gain.setValueAtTime(0.025, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      o.connect(g); o2.connect(g); g.connect(ctx.destination);
+      o.start(t); o2.start(t);
+      o.stop(t + 0.3); o2.stop(t + 0.3);
+    } else if (type === 'begin') {
+      // Warm singing bowl + ascending sparkle
+      [264, 396, 528, 660].forEach((freq, i) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
         o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
-        const peak = 0.08 / (i + 1);
-        g.gain.setValueAtTime(peak, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
+        const peak = 0.06 / (i * 0.5 + 1);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(peak, t + 0.1 + i * 0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
         o.connect(g); g.connect(ctx.destination);
-        o.start(t); o.stop(t + 2.1);
+        o.start(t + i * 0.1); o.stop(t + 2.6);
+      });
+    } else if (type === 'complete') {
+      // Triumphant gentle chord cascade
+      const chords = [
+        [523.25, 659.25, 783.99],   // C major
+        [587.33, 739.99, 880],       // D major
+        [659.25, 830.61, 987.77]     // E major — uplifting resolution
+      ];
+      chords.forEach((chord, ci) => {
+        chord.forEach((freq, ni) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+          const start = t + ci * 0.5;
+          const peak = 0.04;
+          g.gain.setValueAtTime(0, start);
+          g.gain.linearRampToValueAtTime(peak, start + 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, start + 1.8);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(start); o.stop(start + 1.9);
+        });
       });
     }
   }
@@ -2515,24 +2906,77 @@ class App {
     });
   }
 
-  // Render Techniques
+  // Render Techniques — Chest Dropdown
   renderTechniques() {
-    const grid = document.getElementById('technique-grid');
-    grid.innerHTML = TECHNIQUES.map(t => `
-      <div class="technique-card ${t.id === this.selectedTechnique.id ? 'active' : ''}" data-id="${t.id}">
-        <div class="tech-name">${t.name}</div>
-        <div class="tech-timing">${t.timing}</div>
-      </div>
-    `).join('');
-    grid.addEventListener('click', (e) => {
+    const categoryIcons = {
+      calm: { icon: '🌙', color: 'rgba(168,198,134,0.2)', label: 'Calm & Relaxation' },
+      energy: { icon: '⚡', color: 'rgba(232,180,76,0.2)', label: 'Focus & Energy' },
+      balance: { icon: '☯', color: 'rgba(212,145,94,0.2)', label: 'Balance & Wellness' },
+      sleep: { icon: '💤', color: 'rgba(140,140,200,0.2)', label: 'Sleep' }
+    };
+    const categories = ['calm', 'energy', 'balance', 'sleep'];
+    const dropdown = document.getElementById('technique-dropdown');
+    const chest = document.getElementById('technique-chest');
+
+    // Update chest display
+    const updateChest = () => {
+      const t = this.selectedTechnique;
+      const cat = categoryIcons[t.category] || categoryIcons.balance;
+      document.getElementById('chest-icon').textContent = cat.icon;
+      document.getElementById('chest-name').textContent = t.name;
+      document.getElementById('chest-timing').textContent = t.desc || t.timing;
+    };
+    updateChest();
+
+    // Build dropdown
+    let html = '';
+    categories.forEach(cat => {
+      const ci = categoryIcons[cat];
+      const techs = TECHNIQUES.filter(t => t.category === cat);
+      if (techs.length === 0) return;
+      html += `<div class="technique-category">${ci.label}</div>`;
+      techs.forEach(t => {
+        html += `<div class="technique-card ${t.id === this.selectedTechnique.id ? 'active' : ''}" data-id="${t.id}">
+          <div class="tech-icon" style="background:${ci.color}">${ci.icon}</div>
+          <div class="tech-info">
+            <div class="tech-name">${t.name}</div>
+            <div class="tech-desc">${t.desc || ''}</div>
+          </div>
+          <div class="tech-timing">${t.timing}</div>
+        </div>`;
+      });
+    });
+    dropdown.innerHTML = html;
+
+    // Toggle dropdown
+    chest.addEventListener('click', () => {
+      if (this.sessionActive) return;
+      chest.classList.toggle('open');
+      dropdown.classList.toggle('open');
+    });
+
+    // Select technique
+    dropdown.addEventListener('click', (e) => {
       const card = e.target.closest('.technique-card');
       if (!card || this.sessionActive) return;
       const t = TECHNIQUES.find(x => x.id === card.dataset.id);
       if (t) {
         this.selectedTechnique = t;
         this.storage.updateSettings({ breathingPattern: t.id });
-        grid.querySelectorAll('.technique-card').forEach(c => c.classList.remove('active'));
+        dropdown.querySelectorAll('.technique-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
+        updateChest();
+        // Close dropdown
+        chest.classList.remove('open');
+        dropdown.classList.remove('open');
+      }
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#technique-selector')) {
+        chest.classList.remove('open');
+        dropdown.classList.remove('open');
       }
     });
   }
@@ -2689,21 +3133,17 @@ class App {
     const timerEl = document.getElementById('phase-timer');
     const circle = document.getElementById('breathing-circle');
 
-    // Update timer display
-    if (state.freeHold) {
-      timerEl.textContent = Math.floor(state.phaseElapsed) + 's';
-    } else {
-      const newVal = state.remaining.toString();
-      if (timerEl.textContent !== newVal) {
-        timerEl.textContent = newVal;
-        timerEl.classList.remove('pulse');
-        void timerEl.offsetWidth;
-        timerEl.classList.add('pulse');
-      }
+    // Update timer display — show countdown for all phases
+    const newVal = state.remaining.toString();
+    if (timerEl.textContent !== newVal) {
+      timerEl.textContent = newVal;
+      timerEl.classList.remove('pulse');
+      void timerEl.offsetWidth;
+      timerEl.classList.add('pulse');
     }
 
     // Voice countdown (last 3 seconds of each phase)
-    if (!state.freeHold && state.remaining <= 3 && state.remaining > 0) {
+    if (state.remaining <= 3 && state.remaining > 0) {
       this.voiceGuide.speak(String(Math.ceil(state.remaining)), 'low');
     }
 
@@ -2765,7 +3205,7 @@ class App {
       'Right In': 'Right nostril, breathe in', 'Left Out': 'Left nostril, breathe out'
     };
     let cue = voiceCues[phase.label] || phase.label;
-    if (phase.freeHold) cue += '. Tap when ready';
+    if (phase.freeHold) cue += '. Tap circle to release early';
     this.voiceGuide.speak(cue);
   }
 
