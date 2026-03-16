@@ -95,7 +95,7 @@ body::before {
 .breathe-panel { display: flex; flex-direction: column; align-items: center; padding-top: 8px; }
 
 /* Technique Selector — Chest Dropdown */
-.technique-selector { width: 100%; margin-bottom: 16px; position: relative; }
+.technique-selector { width: 100%; margin-bottom: 12px; position: relative; }
 .technique-chest {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 14px 18px; cursor: pointer; transition: all var(--transition);
@@ -142,46 +142,78 @@ body::before {
 .technique-dropdown .tech-desc { font-size: 10px; color: var(--text-secondary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .technique-dropdown .tech-timing { font-size: 10px; color: var(--primary); font-family: var(--mono); flex-shrink: 0; }
 
-/* Breathing Circle */
-.circle-container { position: relative; width: 220px; height: 220px; margin: 20px 0; }
-.breathing-circle {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,145,94,0.15) 0%, rgba(212,145,94,0.03) 70%);
-  border: 2px solid rgba(212,145,94,0.3);
-  transition: transform 0.1s linear;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
+/* Tree Earth Pot — Main Display */
+.tree-earth-container { position: relative; width: 260px; height: 260px; margin: 16px 0 8px; }
+.tree-earth-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(145deg, rgba(168,198,134,0.12) 0%, rgba(212,145,94,0.08) 100%);
+  border: 3px solid rgba(168,198,134,0.25);
+  transition: all 0.8s ease;
+  overflow: hidden;
 }
-.breathing-circle.inhale { transform: scale(1); border-color: var(--primary); background: radial-gradient(circle, rgba(212,145,94,0.2) 0%, rgba(212,145,94,0.05) 70%); }
-.breathing-circle.exhale { transform: scale(0.6); border-color: var(--secondary); background: radial-gradient(circle, rgba(168,198,134,0.15) 0%, rgba(168,198,134,0.03) 70%); }
-.breathing-circle.hold { border-color: var(--warning); background: radial-gradient(circle, rgba(232,180,76,0.15) 0%, rgba(232,180,76,0.03) 70%); }
+.tree-earth-ring::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+  background: linear-gradient(180deg, #5A3D2B 0%, #3E2A1A 100%);
+  border-radius: 0 0 50% 50% / 0 0 30% 30%;
+}
+.tree-earth-ring::after {
+  content: ''; position: absolute; left: 5%; right: 5%; bottom: 38%; height: 8%;
+  background: linear-gradient(90deg, transparent, rgba(168,198,134,0.15), rgba(168,198,134,0.25), rgba(168,198,134,0.15), transparent);
+  border-radius: 50%;
+}
+.tree-earth-display {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  z-index: 2; padding-bottom: 20px;
+}
+.tree-earth-display svg { width: 120px; height: 140px; shape-rendering: crispEdges; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); transition: transform 0.3s ease; }
 
-.phase-label { font-size: 18px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-.phase-timer { font-family: var(--mono); font-size: 42px; font-weight: 700; margin-top: 4px; }
+/* Progress ring around earth pot */
+.tree-progress-ring {
+  position: absolute; inset: -4px; border-radius: 50%; z-index: 3; pointer-events: none;
+}
+.tree-progress-ring circle { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+
+/* Breathing states on earth ring */
+.tree-earth-ring.inhale { border-color: var(--primary); background: linear-gradient(145deg, rgba(212,145,94,0.18) 0%, rgba(168,198,134,0.12) 100%); transform: scale(1.02); }
+.tree-earth-ring.exhale { border-color: var(--secondary); background: linear-gradient(145deg, rgba(168,198,134,0.18) 0%, rgba(212,145,94,0.06) 100%); transform: scale(0.95); }
+.tree-earth-ring.hold { border-color: var(--warning); background: linear-gradient(145deg, rgba(232,180,76,0.15) 0%, rgba(212,145,94,0.08) 100%); }
+
+/* Breathing Circle (text overlay) */
+.circle-container { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.breathing-circle { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+.phase-label { font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.phase-timer { font-family: var(--mono); font-size: 48px; font-weight: 700; margin-top: 2px; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
 .phase-timer.pulse { animation: timerPulse 0.3s ease; }
 @keyframes timerPulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
 /* Session Info */
-.session-info { display: flex; gap: 24px; margin: 12px 0; font-size: 12px; color: var(--text-secondary); }
+.session-info { display: flex; gap: 24px; margin: 8px 0; font-size: 12px; color: var(--text-secondary); }
 .session-info span { font-family: var(--mono); }
 
 /* Duration Selector */
-.duration-selector { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; justify-content: center; }
+.duration-selector { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; justify-content: center; }
 .dur-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); font-family: var(--font); }
 .dur-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(212,145,94,0.1); }
 
-/* Tree Preview (during session) */
-.tree-preview { width: 120px; height: 140px; margin: 12px 0; display: flex; align-items: flex-end; justify-content: center; }
-.tree-preview svg { width: 100%; height: 100%; }
+/* Tree Preview (during session — now inside earth pot) */
+.tree-preview { display: none; }
 
 /* Start/Stop Button */
 .start-btn { width: 100%; max-width: 280px; padding: 16px; font-size: 16px; margin-top: 8px; }
 
 /* Session Active State */
 .breathe-panel.active .technique-selector,
+.breathe-panel.active .tree-selector,
 .breathe-panel.active .duration-selector { display: none; }
-.breathe-panel .tree-preview { display: none; }
-.breathe-panel.active .tree-preview { display: flex; }
+
+/* Hide timer text when not active, show Ready state */
+.breathe-panel .phase-label { opacity: 0; }
+.breathe-panel.active .phase-label { opacity: 1; }
+.breathe-panel .phase-timer { opacity: 0; }
+.breathe-panel.active .phase-timer { opacity: 1; }
+.breathe-panel .tree-earth-display svg { transform: scale(1); }
+.breathe-panel.active .tree-earth-display svg { transform: scale(0.85); }
 
 /* Completion Screen */
 .completion-overlay {
@@ -369,23 +401,76 @@ body::before {
 
 /* Pixel art trees */
 .tree-preview svg, .forest-tree svg, .tree-modal-content svg,
-.completion-card .tree-display svg, .tree-type-item svg,
-.scenery-view svg { shape-rendering: crispEdges; }
+.completion-card .tree-display svg, .tree-earth-display svg,
+.garden-cell svg, .scenery-card svg { shape-rendering: crispEdges; }
 .phase-timer { font-variant-numeric: tabular-nums; }
 
-/* Scenery View */
-.scenery-view { position: relative; width: 100%; aspect-ratio: 1.8/1; border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
-.scenery-view svg.scenery-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.scenery-trees-overlay { position: absolute; bottom: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; padding: 0 12px; align-items: flex-end; }
-.scenery-trees-overlay svg { width: 38px; height: 46px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); shape-rendering: crispEdges; }
-.scenery-picker { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: thin; scrollbar-color: rgba(255,235,205,0.1) transparent; }
-.scenery-thumb { flex-shrink: 0; width: 72px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 4px; text-align: center; cursor: pointer; transition: all var(--transition); }
-.scenery-thumb:hover { background: var(--surface-hover); }
-.scenery-thumb.active { border-color: var(--primary); background: rgba(212,145,94,0.1); }
-.scenery-thumb.locked { opacity: 0.4; cursor: not-allowed; }
-.scenery-thumb.locked::after { content: ''; position: absolute; inset: 0; }
-.scenery-thumb svg { width: 100%; height: 32px; border-radius: 3px; }
-.scenery-thumb .scenery-name { font-size: 8px; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Isometric Garden View */
+.garden-view {
+  position: relative; width: 100%; aspect-ratio: 1.3/1; border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 16px; background: linear-gradient(180deg, #1a2a18 0%, #1e3320 40%, #1a2a18 100%);
+  border: 1px solid rgba(168,198,134,0.15);
+}
+.garden-grid {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transform: perspective(600px) rotateX(35deg) rotateZ(-5deg);
+  transform-style: preserve-3d; padding: 20px;
+}
+.garden-row { display: flex; gap: 2px; margin: 1px 0; }
+.garden-cell {
+  width: 42px; height: 42px; position: relative;
+  background: linear-gradient(135deg, rgba(168,198,134,0.08) 0%, rgba(168,198,134,0.04) 100%);
+  border: 1px solid rgba(168,198,134,0.08); border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s ease;
+}
+.garden-cell.has-tree { background: rgba(168,198,134,0.12); }
+.garden-cell.has-tree:hover { background: rgba(168,198,134,0.2); transform: translateY(-2px); }
+.garden-cell svg { width: 32px; height: 36px; shape-rendering: crispEdges; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); }
+.garden-cell.empty-plot {
+  background: linear-gradient(135deg, rgba(90,61,43,0.15) 0%, rgba(62,42,26,0.1) 100%);
+  border-style: dashed; border-color: rgba(168,198,134,0.06);
+}
+.garden-cell.empty-plot::after { content: '🌱'; font-size: 10px; opacity: 0.2; }
+.garden-empty-msg {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 2;
+}
+.garden-empty-msg .sign {
+  background: linear-gradient(135deg, #8B6952, #6B4A3A); padding: 12px 20px;
+  border-radius: 4px; font-size: 12px; color: var(--text); text-align: center;
+  border: 2px solid #5A3D2B; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.garden-empty-msg .sign-post {
+  width: 4px; height: 20px; background: #5A3D2B; margin: 0 auto;
+}
+.garden-tree-count {
+  position: absolute; bottom: 8px; right: 12px; font-size: 11px;
+  color: rgba(168,198,134,0.6); z-index: 2;
+}
+
+/* Scenery Picker */
+.scenery-section-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+.scenery-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.scenery-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px; cursor: pointer; transition: all var(--transition); position: relative; overflow: hidden;
+}
+.scenery-card:hover { background: var(--surface-hover); }
+.scenery-card.active { border-color: var(--secondary); background: rgba(168,198,134,0.08); }
+.scenery-card.locked { opacity: 0.55; }
+.scenery-card .sc-preview { height: 40px; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.scenery-card .sc-preview svg { width: 100%; height: 100%; }
+.scenery-card .sc-name { font-size: 12px; font-weight: 600; }
+.scenery-card .sc-desc { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+.scenery-card .sc-req { font-size: 9px; color: var(--warning); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.scenery-card .sc-badge {
+  position: absolute; top: 8px; right: 8px; font-size: 9px; padding: 2px 6px;
+  border-radius: 10px; font-weight: 600;
+}
+.scenery-card .sc-badge.unlocked { background: rgba(139,190,106,0.15); color: var(--success); }
+.scenery-card .sc-badge.locked-badge { background: rgba(245,239,230,0.06); color: var(--text-tertiary); }
 
 /* Help & Unlocks */
 .unlock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -445,12 +530,25 @@ body::before {
 
         <div class="duration-selector" id="duration-selector"></div>
 
-        <div class="circle-container">
-          <div class="breathing-circle" id="breathing-circle">
-            <div class="phase-label" id="phase-label">Ready</div>
-            <div class="phase-timer" id="phase-timer">—</div>
-            <div class="wim-hof-counter hidden" id="wim-hof-counter"></div>
-            <div class="retention-tap hidden" id="retention-tap">Tap to release early</div>
+        <div class="tree-earth-container" id="tree-earth-container">
+          <div class="tree-earth-ring" id="tree-earth-ring">
+            <div class="tree-earth-display" id="tree-earth-display"></div>
+          </div>
+          <svg class="tree-progress-ring" id="tree-progress-ring" viewBox="0 0 268 268">
+            <circle cx="134" cy="134" r="131" stroke="rgba(255,235,205,0.06)" stroke-width="3"/>
+            <circle cx="134" cy="134" r="131" stroke="url(#progressGrad)" stroke-width="3" stroke-dasharray="823" stroke-dashoffset="823" id="progress-circle" transform="rotate(-90 134 134)"/>
+            <defs><linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--secondary)"/>
+              <stop offset="100%" stop-color="var(--primary)"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="circle-container">
+            <div class="breathing-circle" id="breathing-circle">
+              <div class="phase-label" id="phase-label">Ready</div>
+              <div class="phase-timer" id="phase-timer">—</div>
+              <div class="wim-hof-counter hidden" id="wim-hof-counter"></div>
+              <div class="retention-tap hidden" id="retention-tap">Tap to release early</div>
+            </div>
           </div>
         </div>
 
@@ -472,9 +570,10 @@ body::before {
         <div class="forest-stat"><div class="val" id="stat-minutes">0</div><div class="lbl">Minutes</div></div>
         <div class="forest-stat"><div class="val" id="stat-streak">0</div><div class="lbl">Streak</div></div>
       </div>
-      <div class="scenery-view" id="scenery-view"></div>
-      <div class="scenery-picker" id="scenery-picker"></div>
+      <div class="garden-view" id="garden-view"></div>
       <div id="forest-grid-container"></div>
+      <div class="scenery-section-title" style="margin-top:8px">Sceneries</div>
+      <div class="scenery-picker" id="scenery-picker"></div>
     </div>
 
     <!-- MUSIC PANEL -->
@@ -2913,8 +3012,10 @@ class App {
     this.renderTechniques();
     this.renderDurations();
     this.renderTreeSelector();
+    this.updateEarthDisplay();
     this.renderSoundscapes();
     this.renderForest();
+    this.renderGardenView();
     this.renderSceneryPicker();
     this.renderHelpSection();
     this.setupTabs();
@@ -2956,7 +3057,7 @@ class App {
         document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
         pill.style.left = `calc(${i * 25}% + 3px)`;
         pill.style.width = `calc(25% - 6px)`;
-        if (btn.dataset.tab === 'forest') { this.renderForest(); this.renderSceneryView(); }
+        if (btn.dataset.tab === 'forest') { this.renderForest(); this.renderGardenView(); }
         if (btn.dataset.tab === 'settings') this.renderHelpSection();
       });
     });
@@ -3103,6 +3204,8 @@ class App {
       // Close dropdown
       chest.classList.remove('open');
       dropdown.classList.remove('open');
+      // Update earth display
+      this.updateEarthDisplay();
     });
 
     // Close on outside click
@@ -3112,6 +3215,14 @@ class App {
         dropdown.classList.remove('open');
       }
     });
+  }
+
+  // Update the tree displayed in the earth pot
+  updateEarthDisplay() {
+    const earthDisplay = document.getElementById('tree-earth-display');
+    if (earthDisplay) {
+      earthDisplay.innerHTML = TreeRenderer.render(this.selectedTree, 3, true);
+    }
   }
 
   // Render Soundscapes
@@ -3163,7 +3274,7 @@ class App {
     });
 
     // Tap to release for Wim Hof / Buteyko
-    circle.addEventListener('click', () => {
+    document.getElementById('tree-earth-container').addEventListener('click', () => {
       if (this.engine) this.engine.tapRelease();
     });
   }
@@ -3213,13 +3324,18 @@ class App {
     document.getElementById('start-btn').style.background = '';
     document.getElementById('start-btn').style.color = '';
 
-    const circle = document.getElementById('breathing-circle');
-    circle.className = 'breathing-circle';
-    circle.style.transform = '';
+    const earthRing = document.getElementById('tree-earth-ring');
+    earthRing.className = 'tree-earth-ring';
+    earthRing.style.transform = '';
     document.getElementById('phase-label').textContent = 'Ready';
     document.getElementById('phase-timer').textContent = '—';
     document.getElementById('wim-hof-counter').classList.add('hidden');
     document.getElementById('retention-tap').classList.add('hidden');
+    // Reset progress ring
+    const progressCircle = document.getElementById('progress-circle');
+    if (progressCircle) progressCircle.setAttribute('stroke-dashoffset', '823');
+    // Re-render full tree in earth display
+    this.updateEarthDisplay();
 
     if (this.wakeLock) { this.wakeLock.release(); this.wakeLock = null; }
     if (!completed) this.voiceGuide.stop();
@@ -3243,16 +3359,24 @@ class App {
       this.voiceGuide.speak(String(Math.ceil(state.remaining)), 'low');
     }
 
-    // Animate circle
+    // Animate earth ring + circle
+    const earthRing = document.getElementById('tree-earth-ring');
     const phase = state.phase;
     if (phase.type === 'inhale') {
       const phasePct = phase.duration === Infinity ? 1 : state.phaseElapsed / phase.duration;
-      const scale = 0.6 + phasePct * 0.4;
-      circle.style.transform = `scale(${scale})`;
+      const scale = 0.95 + phasePct * 0.05;
+      earthRing.style.transform = `scale(${scale})`;
     } else if (phase.type === 'exhale') {
       const phasePct = phase.duration === Infinity ? 0 : state.phaseElapsed / phase.duration;
-      const scale = 1 - phasePct * 0.4;
-      circle.style.transform = `scale(${scale})`;
+      const scale = 1 - phasePct * 0.05;
+      earthRing.style.transform = `scale(${scale})`;
+    }
+
+    // Update progress ring
+    const progressCircle = document.getElementById('progress-circle');
+    if (progressCircle) {
+      const circumference = 823;
+      progressCircle.setAttribute('stroke-dashoffset', circumference - (state.progress * circumference));
     }
 
     // Session timer
@@ -3274,15 +3398,15 @@ class App {
       retTap.classList.add('hidden');
     }
 
-    // Tree preview
-    const treePreview = document.getElementById('tree-preview');
+    // Tree growth in earth display
+    const earthDisplay = document.getElementById('tree-earth-display');
     const stage = state.progress < 0.25 ? 0 : state.progress < 0.5 ? 1 : state.progress < 0.8 ? 2 : 3;
-    treePreview.innerHTML = TreeRenderer.render(this.selectedTree, stage, stage === 3);
+    earthDisplay.innerHTML = TreeRenderer.render(this.selectedTree, stage, stage === 3);
   }
 
   onPhaseChange(phase) {
-    const circle = document.getElementById('breathing-circle');
-    circle.className = 'breathing-circle ' + phase.type;
+    const earthRing = document.getElementById('tree-earth-ring');
+    earthRing.className = 'tree-earth-ring ' + phase.type;
     document.getElementById('phase-label').textContent = phase.label;
 
     // Haptic
@@ -3568,6 +3692,7 @@ class App {
         this.storage.resetAll();
         this.selectedScenery = 'meadow';
         this.renderForest();
+        this.renderGardenView();
         this.renderTreeSelector();
         this.renderSceneryPicker();
         this.renderHelpSection();
@@ -3595,35 +3720,97 @@ class App {
     o.stop(t + 0.4);
   }
 
-  // Scenery View
-  renderSceneryView() {
-    const view = document.getElementById('scenery-view');
+  // Isometric Garden View
+  renderGardenView() {
+    const view = document.getElementById('garden-view');
     const forest = this.storage.getForest();
-    const sceneryHtml = SceneryRenderer.render(this.selectedScenery);
-    const treesHtml = forest.slice(-8).map(t => TreeRenderer.render(t.treeType, 3, false)).join('');
-    view.innerHTML = `${sceneryHtml}<div class="scenery-trees-overlay">${treesHtml}</div>`;
+    const gridSize = 6; // 6x6 garden grid
+    const totalCells = gridSize * gridSize;
+
+    if (forest.length === 0) {
+      view.innerHTML = `
+        <div class="garden-grid">
+          ${Array(gridSize).fill(0).map(() => `<div class="garden-row">
+            ${Array(gridSize).fill(0).map(() => `<div class="garden-cell empty-plot"></div>`).join('')}
+          </div>`).join('')}
+        </div>
+        <div class="garden-empty-msg">
+          <div class="sign">Start planting today!</div>
+          <div class="sign-post"></div>
+        </div>`;
+      return;
+    }
+
+    // Fill grid with trees (most recent first, then empty plots)
+    const displayTrees = forest.slice(-totalCells);
+    let treeIdx = 0;
+    let rows = '';
+    for (let r = 0; r < gridSize; r++) {
+      let cells = '';
+      for (let c = 0; c < gridSize; c++) {
+        if (treeIdx < displayTrees.length) {
+          const tree = displayTrees[treeIdx];
+          cells += `<div class="garden-cell has-tree" data-idx="${treeIdx}">${TreeRenderer.render(tree.treeType, 3, false)}</div>`;
+          treeIdx++;
+        } else {
+          cells += `<div class="garden-cell empty-plot"></div>`;
+        }
+      }
+      rows += `<div class="garden-row">${cells}</div>`;
+    }
+
+    view.innerHTML = `<div class="garden-grid">${rows}</div>
+      <div class="garden-tree-count">🌳 ${forest.length} trees</div>`;
+
+    // Click to view tree detail
+    view.addEventListener('click', (e) => {
+      const cell = e.target.closest('.garden-cell.has-tree');
+      if (!cell) return;
+      const tree = displayTrees[parseInt(cell.dataset.idx)];
+      this.showTreeDetail(tree);
+    });
   }
 
   renderSceneryPicker() {
     const picker = document.getElementById('scenery-picker');
     const unlocks = this.storage.getSceneryUnlocks();
+    const stats = this.storage.getStats();
+
     picker.innerHTML = SCENERIES.map(s => {
       const unlocked = unlocks[s.id];
-      return `<div class="scenery-thumb ${s.id === this.selectedScenery ? 'active' : ''} ${unlocked ? '' : 'locked'}" data-id="${s.id}" title="${s.name}${unlocked ? '' : ' (Locked)'}">
-        ${SceneryRenderer.renderThumb(s.id)}
-        <div class="scenery-name">${unlocked ? s.name : '???'}</div>
+      let reqText = '';
+      let progress = '';
+      if (s.unlock) {
+        if (s.unlock.type === 'sessions') {
+          reqText = `${s.unlock.value} sessions`;
+          progress = `${Math.min(stats.totalSessions, s.unlock.value)}/${s.unlock.value}`;
+        } else if (s.unlock.type === 'minutes') {
+          reqText = `${s.unlock.value} min`;
+          progress = `${Math.min(Math.round(stats.totalMinutes), s.unlock.value)}/${s.unlock.value}`;
+        } else if (s.unlock.type === 'both') {
+          reqText = `${s.unlock.sessions} sessions & ${s.unlock.minutes} min`;
+          progress = `${Math.min(stats.totalSessions, s.unlock.sessions)}/${s.unlock.sessions}`;
+        }
+      }
+      return `<div class="scenery-card ${s.id === this.selectedScenery ? 'active' : ''} ${unlocked ? '' : 'locked'}" data-id="${s.id}">
+        <div class="sc-preview">${SceneryRenderer.renderThumb(s.id)}</div>
+        <div class="sc-name">${s.name}</div>
+        <div class="sc-desc">${s.desc}</div>
+        ${unlocked
+          ? `<span class="sc-badge unlocked">✓ Unlocked</span>`
+          : `<div class="sc-req">🔒 ${reqText} (${progress})</div><span class="sc-badge locked-badge">Locked</span>`
+        }
       </div>`;
     }).join('');
+
     picker.addEventListener('click', (e) => {
-      const thumb = e.target.closest('.scenery-thumb');
-      if (!thumb || thumb.classList.contains('locked')) return;
-      this.selectedScenery = thumb.dataset.id;
+      const card = e.target.closest('.scenery-card');
+      if (!card || card.classList.contains('locked')) return;
+      this.selectedScenery = card.dataset.id;
       this.storage.updateSettings({ selectedScenery: this.selectedScenery });
-      picker.querySelectorAll('.scenery-thumb').forEach(t => t.classList.remove('active'));
-      thumb.classList.add('active');
-      this.renderSceneryView();
+      picker.querySelectorAll('.scenery-card').forEach(t => t.classList.remove('active'));
+      card.classList.add('active');
     });
-    this.renderSceneryView();
   }
 
   // Help & Unlocks
@@ -3656,8 +3843,8 @@ class App {
       else if (s.unlock?.type === 'both') req = `${s.unlock.sessions} sessions & ${s.unlock.minutes} min`;
       return `<div class="unlock-card">
         <div class="unlock-status ${unlocked ? 'unlocked' : 'locked'}">${unlocked ? '✓' : '⏻'}</div>
-        ${unlocked ? SceneryRenderer.renderThumb(s.id) : '<div style="width:48px;height:32px;background:var(--surface);border-radius:4px;margin:0 auto 4px"></div>'}
-        <div class="unlock-name">${unlocked ? s.name : '???'}</div>
+        ${SceneryRenderer.renderThumb(s.id)}
+        <div class="unlock-name">${s.name}</div>
         <div class="unlock-req">${req}</div>
       </div>`;
     }).join('');
